@@ -1,11 +1,41 @@
 Package: MicroRaman
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Phenotyping of microbial Raman data
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Authors@R: c(person("Frederiek-Maarten", "Kerckhof", email = "FrederiekMaarten.Kerckhof@UGent.be", role = c("aut", "cre")),person("Benjamin", "Buysschaert", email = "Benjamin.Buysschaert@UGent.be", role = "ctb"))
+Maintainer: Frederiek-Maarten kerckhof <frederiekmaarten.kerckhof@ugent.be>
+Description: Set of functions to pre-process and phenotype microbial Raman spectroscopy data.
+Remotes:
+    local::/pkgs/unmixR
+    github::zmzhang/baselinewavelet
+    bioc::release/baseline
+Suggests: phyloseq,
+    knitr,
+    rmarkdown
+Depends:
+    R (>= 3.4.0), hyperSpec, baseline, plotrix, MALDIquant
+Imports:
+    hyperSpec,
+    baseline,
+    e1071,
+    rgl,
+    rJava,
+    xlsx,
+    xlsxjars,
+    plotrix,
+    reshape2,
+    lattice, 
+    MALDIquant,
+    RColorBrewer,
+    dendextend,
+    colorspace,
+    ggplot2,
+    NISTunits,
+    vegan,
+    dplyr
+biocViews: CellBasedAssays, Raman Spectroscopy, Infrastructure, Software, Clustering
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
+VignetteBuilder: knitr
+RoxygenNote: 6.0.1

@@ -1,0 +1,3176 @@
+---
+title: "Cristina_workflow"
+author: "CMET"
+date: "4 oktober 2017"
+output: 
+  html_document: 
+    number_sections: yes
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+#### set random seed ####
+set.seed(777)
+
+knitr::opts_chunk$set(echo = TRUE)
+#### load required packages ####
+library(knitr)
+library("rJava")
+library("xlsxjars")
+library("xlsx")
+library("hyperSpec") # hyperSpec package
+library("baseline") # Contains all kinds of functions for baseline removal 
+library("e1071") # Functions for latent class analysis, short time Fourier transform, C-Fuzzy ... 
+library("devtools")
+library("unmixR") # VCA & N-FINDR
+library("plotrix")
+library("rgl")
+library("reshape2")
+
+library(dendextend)
+library(colorspace)
+library(ggplot2)
+library(reshape2) # For melt function
+
+library(NISTunits)
+library(MALDIquant)
+library(vegan)
+library(dplyr)
+
+#Set relative directory
+#knitr::opts_knit$set(root.dir = '/media/projects2/CristinaGT/RamanVariability/')
+
+```
+
+# Goal
+
+New checks to see Raman Variability
+
+  1) Reproducibility: Ecoli 2092 grown in LB and NB, in biological triplicates, 28°C, 120rmp. After 24h, cells are measured using FCM and fixed with PFA. They are measured that day (day1, all samples). Check biological triplicates grown in LB and NB  
+  
+  2) Storage effect:
+    Ecoli 2092 grown in LB and NB, in biological triplicates, 28°C, 120rmp. After 24h, cells are measured using FCM and fixed with PFA. They are measured that day (day1, all samples) and stored in PBS and measured again on day5(NB rep3, LBrep1) and day12(NB rep3, LBrep1)
+      
+  3) Dry effect
+   Ecoli 2092 grown in LB, 28°C, 120rmp. After 24h, cells are measured using FCM and fixed with PFA. Some drops of 2µ are put in a silica slide. They dry in around 10 minutes. Cells are immediately measured (0h) and then at 3h and 6h
+   
+  4) Spin effect
+  Another sample from 'Dry effect' (same culture) fixed in the same way but resuspended with PBS 6 extra times. To check 1spin-6spin, we will use 2092_0h_1spin
+
+=======
+
+Strain | Replicates/Treatment | User | Growth conditions
+-------|------------|------|------------------
+E. coli LMG 2092 | 1,2,3 | CGT | NB, 28°C 120rmp
+E. coli LMG 2092 | 1,2,3 | CGT | LB, 28°C 120rmp
+E. coli LMG 2092 | 1 | CGT | LB, 28°C 120rmp
+
+  
+# Procedure
+For each dataset, I will lolok at the spectra, preprocess. We then will cut the peak at ~1000 cm-1 (suspcicious). I will make dendrograms and cut at a height that will allow me to see the plots well. Then I will plot the spectra of each cluster.
+
+Finally, I will use RF to select the most relevant peaks for classification. I will also use the algorithm VSURF. I will use the code from 'RandomForest_RamanVariability'.
+
+
+#Data analysis
+## 1) Biological triplicates *| E coli* 2092, 28°C, 24h, 120rpm
+### 1.1) Spectra analysis
+```{r BiologicalTriplicates, include=FALSE}
+## 1) Check triplicates in LB and NB
+# *E coli* 2092, 28°C, 24h, 120rpm
+basefolder = "~/Software_dev/MicroRamanData/BiologicalReplicates_2medium/"
+path =       "~/Software_dev/MicroRamanData/BiologicalReplicates_2medium/"
+
+# DATA (spc files)
+filenames <- list.files(basefolder, pattern=".spc")
+spectra <- read.spc(paste0(basefolder, filenames[1]))
+wavelengths <- spectra@wavelength
+raw.data <- NULL
+for (i in 1:length(filenames)){
+  data <- read.spc(paste0(basefolder,filenames[i]))
+  raw.data <- rbind(raw.data, data@data$spc) # raw.data contains now only the intensity values
+}
+
+# hyperspec --> maldiquant
+mass.spectra <- list()
+for (i in 1:length(filenames)){
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=raw.data[i,])
+  metaData(mass.spectrum) <- list(name=filenames[i])
+  mass.spectra <- c(mass.spectra,mass.spectrum)
+}
+#TODO: can the above be replaced in a direct call to without looping?
+ 
+#### Rename spectra in R ####
+labels <- filenames
+Medium <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[2])))
+Replicate <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[3])))
+ID.spc <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[4])))
+ID <- unlist(lapply(strsplit(ID.spc,split=".spc"),function(x) (x[1])))
+
+cell.name=rep("",length(filenames))
+for (i in 1:length(filenames)) {
+  cell.name[i] <-paste(Medium[i],Replicate[i],collapse=NULL)
+}
+
+  mq <- list()
+for (i in 1:length(filenames)){
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=raw.data[i,])
+  metaData(mass.spectrum) <- list(name=cell.name[i])
+  mq <- c(mq,mass.spectrum)
+}
+  
+
+ ## TRIMMING
+# select the biologically relevant part of the fingerprint: 600 - 1800 cm-1 (for dueteriupm 400 - 3200 cm-1?)
+mq.trim <- trim(mq, range=c(600, 1800))
+wavelengths.trim <-  mass(mq.trim[[1]]) #333 (intervals are unequally distributed)
+
+#This chunk of code shows that the intervals between the different wavenumbers are not equal
+interval <- NULL
+name.interval <- NULL
+for (i in 1:length(wavelengths.trim)-1){
+  interval[i] <- wavelengths.trim[i+1]-wavelengths.trim[i]
+  name.interval[i] <- paste(round(wavelengths.trim[i], digits = 4),round(wavelengths.trim[i+1], digits=4), sep=" - ")
+}
+plot(interval, pch = 20, cex = 0.8, bty="l",main = "Interval between wavenumbers", ylab=expression("Size interval [cm"^-1*"]"),xlab=expression("Range wavenumbers [cm"^-1*"]"),xaxt="n")
+axis(at = c(1,332), side = 1, labels = c(name.interval[1],name.interval[322]),las = 0)
+
+
+# BASELINE CORRECTION
+# influence number of iterations?
+library(RColorBrewer)
+iteration.options <- c(5,10,20,30,40,50,100)
+colors <- brewer.pal(7, "Spectral")
+#dev.off()
+layout(rbind(1,2), heights=c(6,1))
+plot(mq.trim[[1]],main = "SNIP baseline correction: influence of iterations", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]]))))
+for (i in 1:length(iteration.options)){
+  baseline <- estimateBaseline(mq.trim[[1]], method="SNIP",iterations=iteration.options[i])
+  lines(baseline,col=colors[i],lwd=2)
+}
+par(mar=c(0, 0, 0, 0))
+plot.new()
+legend('center','groups',legend = iteration.options, lwd=2, lty=c(1,1,1,1,1,1,1),col=colors, ncol=3, bty ="n")
+plot(mq.trim[[1]],main = "SNIP baseline correction: influence of iterations", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]]))))
+for (i in 1:length(iteration.options)){
+  baseline <- estimateBaseline(mq.trim[[1]], method="SNIP",iterations=iteration.options[i])
+  lines(baseline,col=colors[i],lwd=2)
+}
+legend('bottomleft','groups',legend = iteration.options, lwd=2, lty=c(1,1,1,1,1,1,1),col=colors, ncol=3, bty ="o")
+
+# optimal number of iterations?
+number.of.iterations <- 10
+i <- 2
+dev.off()
+plot(mq.trim[[i]],main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[i]])), max(intensity(mq.trim[[i]]))))
+baseline <- estimateBaseline(mq.trim[[i]], method="SNIP",iterations=number.of.iterations)
+lines(baseline,col="blue",lwd=2)
+plot(mq.trim[[i]],main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[i]])), max(intensity(mq.trim[[i]]))))
+baseline <- estimateBaseline(mq.trim[[i]], method="SNIP",iterations=number.of.iterations)
+lines(baseline,col="blue",lwd=2)
+  
+# correct all spectra
+mass.spectra.baseline.corr <- removeBaseline(mq.trim, method="SNIP",iterations=number.of.iterations)
+
+# plot a spectrum to see the effect
+plot(mass.spectra.baseline.corr[[1]], main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mass.spectra.baseline.corr[[i]])), max(intensity(mass.spectra.baseline.corr[[i]]))))
+
+#plot the average of the spectra to see how it looks before I cut
+averagedSpectra <- averageMassSpectra(mass.spectra.baseline.corr)
+plot(averagedSpectra, col="indianred")
+
+## cut region 900-1100 cm-1 - unexpected peak
+#wavelengths <- mass.spectra.baseline.corr@mass
+wavelengths<-wavelengths.trim
+wavelengths_chunk1 <- wavelengths[wavelengths < 900]
+wavelengths_chunk2 <- wavelengths[wavelengths > 1100] 
+new.length <-    length(wavelengths)-length(wavelengths_chunk1)-length(wavelengths_chunk2)
+mass.spectra <- list()
+for (i in 1:length(filenames)){
+  intensity <- mass.spectra.baseline.corr[[i]]@intensity
+  intensity_chunk1 <- intensity[wavelengths < 900]
+  intensity_chunk2 <- intensity[wavelengths > 1100]
+  intensity_new <- rep(0, new.length)
+  intensity.total <-
+    append(append(intensity_chunk1,intensity_new),intensity_chunk2)
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=intensity.total)
+  metaData(mass.spectrum) <- list(name=cell.name[i])
+  mass.spectra <- c(mass.spectra,mass.spectrum) }
+
+#Visualize what I cut
+averagedSpectra_2 <- averageMassSpectra(mass.spectra)
+plot(averagedSpectra_2, add=TRUE)
+
+#I am happy with the new mass.spectra, so I substitute it for mass.spectra.baseline.corr
+mass.spectra.baseline.corr<-mass.spectra
+
+# NORMALISATION:
+# surface = 1
+# peak maximum normalisation is also possible
+mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
+plot(mq.norm[[i]], main = "Normalisation", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
+ par(mfrow=c(2,1))
+ plot(mq.norm[[1]], main = "Normalisation with peak", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
+
+#### change MALDIquant (mq.norm) object in Hyperspec (hs.norm) object ####
+# get the intensity matrix from the mq.norm object
+#matrix.spectra <- matrix(, nrow=  length(mq.norm), ncol = length(wavelengths.trim))
+matrix.spectra <- matrix(nrow=  length(mq.norm), ncol = length(wavelengths))
+for (i in 1:length(mq.norm)){
+  matrix.spectra[i,] <- intensity(mq.norm[[i]])
+}
+
+hs.norm <- new ("hyperSpec", spc = matrix.spectra, wavelength = wavelengths, labels= cell.name)
+#rownames(hs.norm) = make.names(cell.name, unique=TRUE)
+#rownames(hs.norm) <- cell.name
+#rownames(hs.norm@data$spc) <- cell.name
+#colnames(hs.norm@data$spc) <- wavelengths
+
+
+#### calculate the similarity ####
+
+## OPTION 1 
+# using the existing functions in vegan
+# research on FCM data showed that Jaccard and Bray yield similar and good results
+library(vegan)        
+diss <- vegdist(hs.norm[[]], method = 'bray')
+
+
+## OPTION 2 
+# making a customised function
+require(dplyr)
+require(NISTunits)
+## OPTION 1
+# using the existing functions in vegan
+# research on FCM data showed that Jaccard and Bray yield similar and good results
+diss <- vegdist(hs.norm[[]], method = 'bray')
+
+
+## OPTION 3
+# making a customised function
+
+SCA <- function(a, b) {
+  teller <- sum(a*b)
+  kwad1 <- sapply(a, FUN= function(x) x^2)%>%sum()
+  kwad2 <- sapply(b, FUN= function(x) x^2)%>%sum()
+  noemer <- sqrt(kwad1*kwad2)
+  cos <- teller/noemer
+  theta <- NISTradianTOdeg(acos(cos))
+  theta <- theta/90
+  return(theta)
+}
+
+# in the SCA raman the Raman@data$spc is given as matrix in the function with each row containing the cells and each column being a feature
+SCA.raman <- function(x){
+  diss <- matrix( nrow = nrow(x), ncol = nrow(x))
+  for (i in 1:nrow(x)){
+    for (j in 1:nrow(x)) {
+      diss[i,j] <- SCA(x[i,], x[j,])
+      row.names(diss) <- cell.name
+    }
+  }
+  diss <- as.dist(diss)
+  attr(diss, "method") <- "SCA.raman"
+  return(diss)
+}
+
+# Calculate the spectral contrast angle
+similarity <- SCA.raman(hs.norm@data$spc)
+
+# making a dendrogram based on the calculated similarity matrix
+dendrogram <- hclust(similarity, method="ward.D2")
+plot(dendrogram)
+
+#export 
+library(ape)
+dendrogram_phylo <- as.phylo(dendrogram)
+write.tree(dendrogram_phylo, file = "Dendrogram_LBvsNB_Raman", digits = 10)
+
+heatmap(as.matrix(similarity))
+
+#New name to export to iTOL
+
+# cell.name=rep(" ",length(filenames))
+# for (i in 1:length(filenames)) {
+#   cell.name[i] <-paste(Medium[i],Replicate[i],collapse=NULL)
+# }
+# 
+# rownames(hs.norm@data$spc) <- make.unique(cell.name,sep = "_")
+# rownames(hs.norm) <- make.unique(cell.name,sep = "_")
+# similarity.itol <- SCA.raman(hs.norm@data$spc)
+# 
+# dendrogram.itol <- hclust(similarity.itol, method="ward.D2")
+# dendrogram.itol$tip.label <- make.unique(cell.name,sep = "_")
+# library(ape)
+# dendrogram.itol <- as.phylo(dendrogram.itol)
+# write.tree(dendrogram.itol, file = "Dendrogram_LBvsNB", digits = 10)
+
+#### at the given height calculate what cell is in what cluster ####
+clusters<- as.matrix(cutree(dendrogram, h= 0.7))
+plot(dendrogram)
+rect.hclust(dendrogram, k=max(clusters), border="red")
+
+## The tree at 0.75 has 8 clusters (k)
+k <- 8
+library(colorspace)
+library(dendextend)
+cols <- rainbow_hcl(k)
+dend <- as.dendrogram(dendrogram)
+dend <- color_branches(dend, k = k)
+
+
+# Set colors and shapes code
+groupCodes<- c(rep("LBrep1", 45), rep("LBrep2", 45), rep("LBrep3", 44), rep("NBrep1", 45), rep("NBrep2", 44), rep("NBrep3", 45))
+rownames(hs.norm) <- make.unique(groupCodes)
+
+colorCodes <- c(LBrep1="steelblue1", LBrep2="steelblue", LBrep3="steelblue4", NBrep1="indianred1", NBrep2="indianred", NBrep3="indianred4")
+labels_colors(dend) <- colorCodes[groupCodes][order.dendrogram(dend)]
+
+leaves_col<-colorCodes[groupCodes][order.dendrogram(dend)]
+
+shapeCodes <- c(LBrep1=8, LBrep2=17, LBrep3=13, NBrep1=8, NBrep2=17, NBrep3=13)
+leaves_pch<-shapeCodes[groupCodes][order.dendrogram(dend)]
+
+dend %>% set("leaves_pch", leaves_pch) %>%  # node point type
+  #set("leaves_cex", 0.7) %>%  # node point size
+  set("leaves_col", leaves_col) %>% #node point color
+  #set("branches_col", leaves_col) %>%
+  #par(mar = rep(0,4))
+  #circlize_dendrogram(dend, labels_track_height = NA, dend_track_height = .4) 
+plot(main = "Phenotypes and replicates", ylab="Height", leaflab="none",  type = "rectangle")
+legend('topright',c("LB rep1", "LB rep2", "LB rep3","NB rep1", "NB rep2", "NB rep3") , pch= c(8,17,13),col=c("steelblue1", "steelblue", "steelblue4", "indianred1","indianred","indianred4"))
+       
+
+#par(mar = rep(0,4))
+# circlize_dendrogram(dend, dend_track_height = 0.8) 
+#circlize_dendrogram(dend, labels_track_height = NA, dend_track_height = .4) 
+
+
+### Plot separated trees
+
+labels_dend <- labels(dend)
+groups <- cutree(dend, k=8, order_clusters_as_data = TRUE)
+dends <- list()
+
+for(i in 1:k) {
+  labels_to_keep <- labels_dend[i != groups]
+  dends[[i]] <- prune(dend, labels_to_keep)
+}
+
+par(mfrow = c(2,2))
+
+for(i in 1:k) { 
+  plot(dends[[i]], 
+       main = paste0("Tree number ", i))
+}
+
+
+##Automatic cluster plot depending on groups
+
+hs.norm$clusters<- as.factor(cutree(dendrogram, k=8))
+clusters<- as.matrix(cutree(dendrogram, k=8))
+
+par(mfrow = c(2,2))
+c1=subset(hs.norm,clusters==1)
+plot(c1)
+c2=subset(hs.norm,clusters==2)
+plot(c2)
+c3=subset(hs.norm,clusters==3)
+plot(c3)
+c4=subset(hs.norm,clusters==4)
+plot(c4)
+c5=subset(hs.norm,clusters==5)
+plot(c5)
+c6=subset(hs.norm,clusters==6)
+plot(c6)
+c7=subset(hs.norm,clusters==7)
+plot(c7)
+c8=subset(hs.norm,clusters==8)
+plot(c8)
+
+### Manual cluster validation
+correct_C1<- grep("LB", rownames(c1))
+correct_C2<- grep("LB",rownames(c2))
+correct_C3<- grep("LB",rownames(c3))
+correct_C4<- grep("NB",rownames(c4))
+correct_C5<- grep("NB",rownames(c5))
+correct_C6<- grep("NB",rownames(c6))
+correct_C7<- grep("NB",rownames(c7))
+correct_C8<- grep("NB",rownames(c8))
+
+correct_cluster<- length(correct_C1)+length(correct_C2)+length(correct_C3)+length(correct_C4)+length(correct_C5)+length(correct_C6)+length(correct_C7)+length(correct_C8)
+
+accuracy_cluster <- correct_cluster/268
+accuracy_cluster
+
+#### PCA ####
+pca <- prcomp(hs.norm$.)
+plot(pca)
+summary(pca)
+
+library('factoextra')
+labels <- groupCodes
+
+# PCA 
+res.PCA <- prcomp(hs.norm$.) 
+p <- fviz_pca_ind(res.PCA,label='none', geom ="point", habillage = labels,pointsize = 2)# addEllipses=TRUE, ellipse.level=0.95)
+p +labs(title = "PCA" ) + theme_minimal()
+p + scale_color_manual(values=c("steelblue1", "steelblue", "steelblue4", "indianred","indianred1","indianred4"))+
+                       scale_shape_manual(values=c(8,17,13,8,17,13))
+
+#kmeans clusters
+library(ggfortify)
+library(ggplot2)
+library(RColorBrewer)
+autoplot(pca, label=FALSE)
+autoplot(pca,label = TRUE, label.size = 4,loadings = FALSE, loadings.label = FALSE)
+
+# plotting the kmeans clusters on top of the data depending on the number of PCA's
+library(cluster)
+# for the first two
+autoplot(kmeans(pca$x[,1:2], 6), data =pca$x[,1:2] ,label = TRUE, label.size = 3,loadings = FALSE, loadings.label = FALSE, frame=TRUE, frame.type= "norm")
+# 70%
+autoplot(kmeans(pca$x[,1:20], 6), data =pca$x[,1:20] ,label = TRUE, label.size = 3,loadings = FALSE, loadings.label = FALSE, frame=TRUE, frame.type= "norm")
+# 80%
+autoplot(kmeans(pca$x[,1:37], 6), data =pca$x[,1:37] ,label = TRUE, label.size = 3,loadings = FALSE, loadings.label = FALSE, frame=TRUE, frame.type= "norm")
+# 85%
+autoplot(kmeans(pca$x[,1:49], 6), data =pca$x[,1:49] ,label = TRUE, label.size = 3,loadings = FALSE, loadings.label = FALSE, frame=TRUE, frame.type= "norm")
+# 90%
+autoplot(kmeans(pca$x[,1:65], 6), data =pca$x[,1:65] ,label = TRUE, label.size = 3,loadings = FALSE, loadings.label = FALSE, frame=TRUE, frame.type= "norm")
+# 95%
+autoplot(kmeans(pca$x[,1:88], 6), data =pca$x[,1:88] ,label = TRUE, label.size = 3,loadings = FALSE, loadings.label = FALSE, frame=TRUE, frame.type= "norm")
+# for all
+autoplot(kmeans(pca$x, 6), data =pca$x ,label = TRUE, label.size = 3,loadings = FALSE, loadings.label = FALSE, frame=TRUE, frame.type= "norm")
+
+
+# how to get the percentage per principal component out of the prcomp object
+PoV <- (pca$sdev)^2 / sum(pca$sdev^2)
+cumPoV <- cumsum(pca$sdev^2 / sum(pca$sdev^2))
+Var <- rbind(PoV, cumPoV)
+
+
+#### Cluster validation ####
+library(clValid)
+library(kohonen)
+cl.valid <- clValid(pca$x, 2:8, clMethods=c("hierarchical", "kmeans", "diana", "fanny", "som", "model", "sota", "pam", "clara"),validation = c("internal", "stability"))
+
+hsnorm_stats <- cluster.stats(dist(hsnorm.df),  hs.norm$clusters)
+
+
+```
+### 1.2) Random forest: RF and VSURF
+```{r BiologicalTriplicates_RF, include=FALSE}
+#### RF ####
+# put the intensity values in a dataframe
+df <- as.data.frame(hs.norm@data$spc, col.names=hs.norm@wavelength , check.names=TRUE)
+names(df) <- make.names(names(df)) 
+
+# make groups
+groups <- c(rep("LB", 134), rep("NB", 134))
+
+# concatenate the column with the groups to the original data frame 
+df <- cbind(df, groups)
+
+# 75% of the sample size
+smp_size <- floor(0.75 * nrow(df))
+
+# set the seed to make your partition reproducible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(df)), size = smp_size) 
+train <- df[train_ind, ] # this set is 75% of all samples 
+test <- df[-train_ind, ] # this one is the other 25%
+
+# Random Forests package
+library(randomForest)
+
+# model training
+RF <- randomForest(groups ~. , data = train, ntree=1000,
+                   importance=TRUE) # as.factor is not required
+
+
+# number of predictors presented at each split sqrt(p) (=default)
+predictions <- predict(RF, test) 
+accuracy <- mean(predictions == test$groups) 
+accuracy
+table(test$groups, predictions)
+feature.importance <- importance(RF)
+varImpPlot(RF,type=1) # type = 1 for accuracy, 2 for Gini impurity
+#, Gini impurity is a measure of how often a randomly chosen element from the set would be incorrectly labeled if it #was randomly labeled according to the distribution of labels in the subset
+
+# all higher than x? 
+x = 3
+importance.acc <- wavelengths[feature.importance[,4] > x]
+importances.accuracy <- cbind(importance.acc,feature.importance[feature.importance[,4] > x,0])
+
+
+# plot(hs.norm[i])
+# mtext(expression("Wavenumber [cm"^-1*"]"), side=1, las=1, line =2.5, cex=2)
+# mtext("Intensity [A.U.]", side=2, las=3, line =2.5, cex=2)
+# title(expression(paste("Biological triplicates")))
+# points(importance.acc,seq(0,0,length.out=length(importance.acc)), col="red",pch = 16,cex = 2)
+
+hsnorm.df = as.t.df (mean_sd (hs.norm))
+points.df<-as.data.frame(importance.acc)
+colnames(points.df)<- ".wavelength"
+
+plotpeaks <- ggplot (hsnorm.df, aes (x = .wavelength)) +
+  geom_ribbon (aes (ymin = mean-sd, ymax = mean+sd),
+               fill = "#00000030") +
+  geom_line (aes (y = mean))+
+  labs(x= expression("Wavenumber [cm"^-1*"]"), y= "Intensity [A.U.]", title= "Phenotypes and replicates") +   geom_vline(xintercept=points.df$.wavelength, color = "red4", size=0.5)
+
+plotpeaks + theme(title=element_text(size=20),axis.text=element_text(size=15),
+        axis.title=element_text(size=18,face="bold"))
+
+####VSURF####
+#Peter recommended to use this algorithm as it is less sensitive to correlations and is specific for
+#many observations in a small amount of samples (which is our case)
+
+# library('VSURF')
+# as.character(df$groups)
+# as.factor(df$groups)
+# VSURF_data<- VSURF(df,df$groups, nfor.thres = 50)
+# 
+# ###A)Thresholding###
+# summary.VSURF(VSURF_data)
+# plot.VSURF(VSURF_data)
+# 
+# VSURF_data<- VSURF(df,df$groups, nfor.thres = 50,mtry = (nvm/3))
+# 
+# ###B)Interpretation###
+# # set nvm=nvm/3 as the number of variables is greater than the observations
+# nfor.interp
+# err.min
+# sd.min
+
+#the smallest model (and henceits corresponding variables) having a mean OOB error less than 
+#err.min + nsd * sd.min is selected
+
+###C)Prediction###
+# set nvm=nvm/3 as the number of variables is greater than the observations
+#mean.jump, the mean jump value is calculated using variables that have been left out by the second step, 
+#and is set as the mean absolute difference between mean OOB errors of one model and its first following
+#model. Hence a variable is included in the model if the mean OOB error decrease is larger
+#than nmj * mean.jump
+
+
+```
+
+## 2) Storage effect | *E coli* 2092, 28°C, 24h, 120rpm // day5, day12
+### 2.1) Spectra analysis
+```{r StorageEffect, include=FALSE,fig.width=1, fig.height=1} 
+
+require("knitr")
+## 2) Storage effect
+# *E coli* 2092, 28°C, 24h, 120rpm // day5, day12
+
+#### Basefolder and working directory ####
+
+basefolder = "/media/projects2/CristinaGT/RamanVariability/Spectra/StorageEffect/StorageEffect/"
+path= "/media/projects2/CristinaGT/RamanVariability/Spectra/StorageEffect/StorageEffect/"
+# DATA (spc files)
+# DATA (spc files)
+filenames <- list.files(basefolder, pattern=".spc")
+spectra <- read.spc(paste0(basefolder, filenames[1]))
+wavelengths <- spectra@wavelength
+raw.data <- NULL
+for (i in 1:length(filenames)){
+  data <- read.spc(paste0(basefolder,filenames[i]))
+  raw.data <- rbind(raw.data, data@data$spc) # raw.data contains now only the intensity values
+}
+
+# hyperspec --> maldiquant
+mass.spectra <- list()
+for (i in 1:length(filenames)){
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=raw.data[i,])
+  metaData(mass.spectrum) <- list(name=filenames[i])
+  mass.spectra <- c(mass.spectra,mass.spectrum)
+}
+
+ 
+  #### Rename spectra in R ####
+labels <- filenames
+Medium <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[2])))
+Replicate <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[3])))
+ID.spc <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[4])))
+ID <- unlist(lapply(strsplit(ID.spc,split=".spc"),function(x) (x[1])))
+
+cell.name=rep("",length(filenames))
+for (i in 1:length(filenames)) {
+  cell.name[i] <-paste(Medium[i],Replicate[i],ID[i],collapse=NULL)
+}
+
+ 
+  mq <- list()
+for (i in 1:length(filenames)){
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=raw.data[i,])
+  metaData(mass.spectrum) <- list(name=cell.name[i])
+  mq <- c(mq,mass.spectrum)
+}
+  
+## TRIMMING
+# select the biologically relevant part of the fingerprint: 600 - 1800 cm-1 (for dueteriupm 400 - 3200 cm-1?)
+mq.trim <- trim(mq, range=c(600, 1800))
+wavelengths.trim <-  mass(mq.trim[[1]]) #333 (intervals are unequally distributed)
+
+#This chunk of code shows that the intervals between the different wavenumbers are not equal
+interval <- NULL
+name.interval <- NULL
+for (i in 1:length(wavelengths.trim)-1){
+  interval[i] <- wavelengths.trim[i+1]-wavelengths.trim[i]
+  name.interval[i] <- paste(round(wavelengths.trim[i], digits = 4),round(wavelengths.trim[i+1], digits=4), sep=" - ")
+}
+plot(interval, pch = 20, cex = 0.8, bty="l",main = "Interval between wavenumbers", ylab=expression("Size interval [cm"^-1*"]"),xlab=expression("Range wavenumbers [cm"^-1*"]"),xaxt="n")
+axis(at = c(1,332), side = 1, labels = c(name.interval[1],name.interval[322]),las = 0)
+
+
+# BASELINE CORRECTION
+# influence number of iterations?
+library(RColorBrewer)
+iteration.options <- c(5,10,20,30,40,50,100)
+colors <- brewer.pal(7, "Spectral")
+#dev.off()
+layout(rbind(1,2), heights=c(6,1))
+plot(mq.trim[[1]],main = "SNIP baseline correction: influence of iterations", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]]))))
+for (i in 1:length(iteration.options)){
+  baseline <- estimateBaseline(mq.trim[[1]], method="SNIP",iterations=iteration.options[i])
+  lines(baseline,col=colors[i],lwd=2)
+}
+par(mar=c(0, 0, 0, 0))
+plot.new()
+legend('center','groups',legend = iteration.options, lwd=2, lty=c(1,1,1,1,1,1,1),col=colors, ncol=3, bty ="n")
+plot(mq.trim[[1]],main = "SNIP baseline correction: influence of iterations", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]]))))
+for (i in 1:length(iteration.options)){
+  baseline <- estimateBaseline(mq.trim[[1]], method="SNIP",iterations=iteration.options[i])
+  lines(baseline,col=colors[i],lwd=2)
+}
+legend('bottomleft','groups',legend = iteration.options, lwd=2, lty=c(1,1,1,1,1,1,1),col=colors, ncol=3, bty ="o")
+
+# optimal number of iterations?
+number.of.iterations <- 10
+i <- 2
+dev.off()
+plot(mq.trim[[i]],main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[i]])), max(intensity(mq.trim[[i]]))))
+baseline <- estimateBaseline(mq.trim[[i]], method="SNIP",iterations=number.of.iterations)
+lines(baseline,col="blue",lwd=2)
+plot(mq.trim[[i]],main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[i]])), max(intensity(mq.trim[[i]]))))
+baseline <- estimateBaseline(mq.trim[[i]], method="SNIP",iterations=number.of.iterations)
+lines(baseline,col="blue",lwd=2)
+  
+# correct all spectra
+mass.spectra.baseline.corr <- removeBaseline(mq.trim, method="SNIP",iterations=number.of.iterations)
+
+# plot a spectrum to see the effect
+plot(mass.spectra.baseline.corr[[1]], main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mass.spectra.baseline.corr[[i]])), max(intensity(mass.spectra.baseline.corr[[i]]))))
+
+#plot the average of the spectra to see how it looks before I cut
+averagedSpectra <- averageMassSpectra(mass.spectra.baseline.corr)
+plot(averagedSpectra, col="indianred")
+
+## cut region 900-1100 cm-1 - unexpected peak
+#wavelengths <- mass.spectra.baseline.corr@mass
+wavelengths<-wavelengths.trim
+wavelengths_chunk1 <- wavelengths[wavelengths < 900]
+wavelengths_chunk2 <- wavelengths[wavelengths > 1100] 
+new.length <-    length(wavelengths)-length(wavelengths_chunk1)-length(wavelengths_chunk2)
+mass.spectra <- list()
+for (i in 1:length(filenames)){
+  intensity <- mass.spectra.baseline.corr[[i]]@intensity
+  intensity_chunk1 <- intensity[wavelengths < 900]
+  intensity_chunk2 <- intensity[wavelengths > 1100]
+  intensity_new <- rep(0, new.length)
+  intensity.total <-
+    append(append(intensity_chunk1,intensity_new),intensity_chunk2)
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=intensity.total)
+  metaData(mass.spectrum) <- list(name=cell.name[i])
+  mass.spectra <- c(mass.spectra,mass.spectrum) }
+
+#Visualize what I cut
+averagedSpectra_2 <- averageMassSpectra(mass.spectra)
+plot(averagedSpectra_2, add=TRUE)
+
+#I am happy with the new mass.spectra, so I substitute it for mass.spectra.baseline.corr
+mass.spectra.baseline.corr<-mass.spectra
+
+# NORMALISATION:
+# surface = 1
+# peak maximum normalisation is also possible
+mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
+#plot(mq.norm[[i]], main = "Normalisation", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
+plot(mq.norm[[i]], main = "Normalisation", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
+
+
+
+#### change MALDIquant (mq.norm) object in Hyperspec (hs.norm) object ####
+# get the intensity matrix from the mq.norm object
+
+matrix.spectra <- matrix(nrow=  length(mq.norm), ncol = length(wavelengths.trim))
+for (i in 1:length(mq.norm)){
+  matrix.spectra[i,] <- intensity(mq.norm[[i]])
+}
+
+hs.norm <- new ("hyperSpec", spc = matrix.spectra, wavelength = wavelengths.trim, labels= cell.name)
+#rownames(hs.norm) = make.names(cell.name, unique=TRUE)
+#rownames(hs.norm) <- cell.name
+rownames(hs.norm@data$spc) <- cell.name
+colnames(hs.norm@data$spc) <- wavelengths.trim
+
+
+#### calculate the similarity ####
+
+## OPTION 1 
+# using the existing functions in vegan
+# research on FCM data showed that Jaccard and Bray yield similar and good results
+library(vegan)        
+diss <- vegdist(hs.norm[[]], method = 'bray')
+
+
+## OPTION 2 
+# making a customised function
+require(dplyr)
+require(NISTunits)
+## OPTION 1
+# using the existing functions in vegan
+# research on FCM data showed that Jaccard and Bray yield similar and good results
+diss <- vegdist(hs.norm[[]], method = 'bray')
+
+
+## OPTION 3
+# making a customised function
+
+SCA <- function(a, b) {
+  teller <- sum(a*b)
+  kwad1 <- sapply(a, FUN= function(x) x^2)%>%sum()
+  kwad2 <- sapply(b, FUN= function(x) x^2)%>%sum()
+  noemer <- sqrt(kwad1*kwad2)
+  cos <- teller/noemer
+  theta <- NISTradianTOdeg(acos(cos))
+  theta <- theta/90
+  return(theta)
+}
+
+# in the SCA raman the Raman@data$spc is given as matrix in the function with each row containing the cells and each column being a feature
+SCA.raman <- function(x){
+  diss <- matrix( nrow = nrow(x), ncol = nrow(x))
+  for (i in 1:nrow(x)){
+    for (j in 1:nrow(x)) {
+      diss[i,j] <- SCA(x[i,], x[j,])
+      row.names(diss) <- cell.name
+    }
+  }
+  diss <- as.dist(diss)
+  attr(diss, "method") <- "SCA.raman"
+  return(diss)
+}
+
+# Calculate the spectral contrast angle
+similarity <- SCA.raman(hs.norm@data$spc)
+
+
+# making a dendrogram based on the calculated similarity matrix
+dendrogram <- hclust(similarity, method="ward.D2")
+plot(dendrogram)
+
+#### at the given height calculate what cell is in what cluster ####
+clusters<- as.matrix(cutree(dendrogram, h= 0.7))
+
+plot(dendrogram)
+rect.hclust(dendrogram, k=max(clusters), border="red")
+
+
+library(ape)
+#dendrogram.itol <- as.phylo(dendrogram.itol)
+#write.tree(dendrogram.itol, file = "Dendrogram_Storage", digits = 10)
+
+#export 
+library(ape)
+dendrogram <- as.phylo(dendrogram)
+
+#New name to export to iTOL
+
+# dendrogram$tip.label <- make.unique(cell.name,sep = "_")
+# write.tree(dendrogram, file = "Dendrogram_StorageEffect_Raman", digits = 10)
+# 
+# heatmap(as.matrix(similarity))
+
+## The tree at 0.7 has 7 clusters (k)
+k <- 7
+library(colorspace)
+library(dendextend)
+cols <- rainbow_hcl(k)
+dend <- as.dendrogram(dendrogram)
+dend <- color_branches(dend, k = k)
+
+# Set colors and shapes code
+groupCodes<- c(rep("LB_day0", 45), rep("LB_day12", 38), rep("LB_day5", 39), rep("NB_day0", 39), rep("NB_day12", 41), rep("NB_day0", 5),rep("NB_day5", 40))
+rownames(hs.norm) <- make.unique(groupCodes)
+
+colorCodes <- c(LB_day0="steelblue1", LB_day12="steelblue", LB_day5="steelblue4", NB_day0="indianred1", NB_day12="indianred", NB_day5="indianred4")
+labels_colors(dend) <- colorCodes[groupCodes][order.dendrogram(dend)]
+
+leaves_col<-colorCodes[groupCodes][order.dendrogram(dend)]
+
+shapeCodes <- c(LB_day0=8, LB_day12=17, LB_day5=13, NB_day0=8, NB_day12=17, NB_day5=13)
+leaves_pch<-shapeCodes[groupCodes][order.dendrogram(dend)]
+
+dend %>% set("leaves_pch", leaves_pch) %>%  # node point type
+  #set("leaves_cex", 0.7) %>%  # node point size
+  set("leaves_col", leaves_col) %>% #node point color
+  #set("branches_col", leaves_col) %>%
+  #par(mar = rep(0,4))
+  #circlize_dendrogram(dend, labels_track_height = NA, dend_track_height = .4) 
+plot(main = "Storage effect", ylab="Height", leaflab="none",  type = "rectangle")
+legend('topright',c("LB rep1", "LB rep2", "LB rep3","NB rep1", "NB rep2", "NB rep3") , pch= c(8,17,13),col=c("steelblue1", "steelblue", "steelblue4", "indianred1","indianred","indianred4"))
+       
+
+### Plot separated trees
+labels_dend <- labels(dend)
+groups <- cutree(dend, k=7, order_clusters_as_data = TRUE)
+dends <- list()
+
+for(i in 1:k) {
+  labels_to_keep <- labels_dend[i != groups]
+  dends[[i]] <- prune(dend, labels_to_keep)
+}
+
+par(mfrow = c(2,2))
+
+for(i in 1:k) { 
+  plot(dends[[i]], 
+       main = paste0("Tree number ", i))
+}
+
+
+##Automatic cluster plot depending on groups
+
+hs.norm$clusters<- as.factor(cutree(dendrogram, k=7))
+clusters<- as.matrix(cutree(dendrogram, k=7))
+
+c1=subset(hs.norm,clusters==1)
+plot(c1)
+c2=subset(hs.norm,clusters==2)
+plot(c2)
+c3=subset(hs.norm,clusters==3)
+plot(c3)
+c4=subset(hs.norm,clusters==4)
+plot(c4)
+c5=subset(hs.norm,clusters==5)
+plot(c5)
+c6=subset(hs.norm,clusters==6)
+plot(c6)
+c7=subset(hs.norm,clusters==7)
+plot(c7)
+
+### Manual cluster validation
+correct_C1<- grep("day0", rownames(c1))
+correct_C2<- grep("day0", rownames(c2))
+correct_C3<- grep("day12",rownames(c3))
+correct_C4<- grep("day12",rownames(c4))
+correct_C5<- grep("day5",rownames(c5))
+correct_C6<- grep("day0",rownames(c6))
+correct_C7<- grep("day0",rownames(c7))
+
+
+correct_cluster<- length(correct_C1)+length(correct_C2)+length(correct_C3)+length(correct_C4)+length(correct_C5)+length(correct_C6)+length(correct_C7)
+
+accuracy_cluster <- correct_cluster/247
+accuracy_cluster
+
+correct_C1<- grep("LB", rownames(c1))
+correct_C2<- grep("LB", rownames(c2))
+correct_C3<- grep("LB",rownames(c3))
+correct_C4<- grep("NB",rownames(c4))
+correct_C5<- grep("LB",rownames(c5))
+correct_C6<- grep("NB",rownames(c6))
+correct_C7<- grep("NB",rownames(c7))
+
+correct_cluster<- length(correct_C1)+length(correct_C2)+length(correct_C3)+length(correct_C4)+length(correct_C5)+length(correct_C6)+length(correct_C7)
+
+accuracy_cluster <- correct_cluster/247
+accuracy_cluster
+
+match=c("LB", "day0")
+correct_C1<- grep(match, rownames(c1))
+match=c("LB", "day0")
+correct_C2<- grep(match, rownames(c2))
+match=c("LB", "day12")
+correct_C3<- grep(match,rownames(c3))
+match=c("NB", "day12")
+correct_C4<- grep(match,rownames(c4))
+match=c("LB", "day5")
+correct_C5<- grep(match,rownames(c5))
+match=c("NB", "day0")
+correct_C6<- grep(match,rownames(c6))
+match=c("NB", "day0")
+correct_C7<- grep(match,rownames(c7))
+
+correct_cluster<- length(correct_C1)+length(correct_C2)+length(correct_C3)+length(correct_C4)+length(correct_C5)+length(correct_C6)+length(correct_C7)
+
+accuracy_cluster <- correct_cluster/247
+accuracy_cluster
+
+
+```
+### 2.2) Random forest: RF and VSURF
+```{r StorageEffect_RF, include=FALSE}
+
+#### RF ####
+# put the intensity values in a dataframe
+df.day <- as.data.frame(hs.norm@data$spc, col.names=hs.norm@wavelength , check.names=TRUE)
+names(df.day) <- make.names(names(df.day)) 
+
+df.medium <- as.data.frame(hs.norm@data$spc, col.names=hs.norm@wavelength , check.names=TRUE)
+names(df.medium) <- make.names(names(df.medium)) 
+
+df.daymedium <- as.data.frame(hs.norm@data$spc, col.names=hs.norm@wavelength , check.names=TRUE)
+names(df.daymedium) <- make.names(names(df.daymedium))
+
+# make groups
+groups.day <- c(rep("Day0", 45), rep("Day12", 38), rep("Day5", 39), rep("Day0", 39), rep("Day12", 40), rep("Day0", 5), rep("Day5", 41))
+
+groups.medium<- c(rep("LB", 122), rep("NB", 125))
+
+groups.daymedium <- c(rep("LB_day0", 45), rep("LB_day12", 38), rep("LB_day5", 39), rep("NB_day0", 39), rep("NB_day12", 40), rep("NB_day0", 5), rep("NB_day5", 41))
+
+# concatenate the column with the groups to the original data frame 
+df.day <- cbind(df.day, groups.day)
+df.medium <- cbind(df.medium, groups.medium)
+df.daymedium <- cbind(df.daymedium, groups.daymedium)
+
+# 75% of the sample size
+day.smp_size <- floor(0.75 * nrow(df.day))
+medium.smp_size <- floor(0.75 * nrow(df.medium))
+daymedium.smp_size <- floor(0.75 * nrow(df.daymedium))
+
+# set the seed to make your partition reproducible
+set.seed(123)
+day.train_ind <- sample(seq_len(nrow(df.day)), size = day.smp_size) 
+day.train <- df.day[day.train_ind, ] # this set is 75% of all samples 
+day.test <- df.day[-day.train_ind, ] # this one is the other 25%
+
+medium.train_ind <- sample(seq_len(nrow(df.medium)), size = medium.smp_size) 
+medium.train <- df.medium[medium.train_ind, ] # this set is 75% of all samples 
+medium.test <- df.medium[-medium.train_ind, ] # this one is the other 25%
+
+daymedium.train_ind <- sample(seq_len(nrow(df.daymedium)), size = daymedium.smp_size) 
+daymedium.train <- df.daymedium[daymedium.train_ind, ] # this set is 75% of all samples 
+daymedium.test <- df.daymedium[-daymedium.train_ind, ] # this one is the other 25%
+
+# Random Forests package
+library(randomForest)
+
+# model training
+RF.day <- randomForest(groups.day ~. , data = day.train, ntree=1000,
+                   importance=TRUE) # as.factor is not required
+
+RF.medium <- randomForest(groups.medium ~. , data = medium.train, ntree=1000,
+                   importance=TRUE) # as.factor is not required
+
+RF.daymedium <- randomForest(groups.daymedium ~. , data = daymedium.train, ntree=1000,
+                   importance=TRUE) # as.factor is not required
+
+# number of predictors presented at each split sqrt(p) (=default)
+predictions.day <- predict(RF.day, day.test) 
+accuracy.day <- mean(predictions.day == day.test$groups.day) 
+accuracy.day
+table(day.test$groups.day, predictions.day)
+feature.importance.day <- importance(RF.day)
+varImpPlot(RF.day,type=1) # type = 1 for accuracy, 2 for Gini impurity
+#, Gini impurity is a measure of how often a randomly chosen element from the set would be incorrectly labeled if it #was randomly labeled according to the distribution of labels in the subset
+
+predictions.medium <- predict(RF.medium, medium.test) 
+accuracy.medium <- mean(predictions.medium == medium.test$groups.medium) 
+accuracy.medium
+table(medium.test$groups.medium, predictions.medium)
+feature.importance.medium <- importance(RF.medium)
+varImpPlot(RF.medium,type=1)
+
+predictions.daymedium <- predict(RF.daymedium, daymedium.test) 
+accuracy.daymedium <- mean(predictions.daymedium == daymedium.test$groups.daymedium) 
+accuracy.daymedium
+table(daymedium.test$groups.daymedium, predictions.daymedium)
+feature.importance.daymedium <- importance(RF.daymedium)
+varImpPlot(RF.daymedium,type=1)
+
+
+# all higher than x? 
+x =9
+importance.acc.day <- wavelengths[feature.importance.day[,4] > x]
+importances.accuracy.day <- cbind(importance.acc.day,feature.importance.day[feature.importance.day[,4] > x,0])
+
+x2 = 4
+importance.acc.medium <- wavelengths[feature.importance.medium[,4] > x2]
+importances.accuracy.medium <- cbind(importance.acc.medium,feature.importance.medium[feature.importance.medium[,4] > x2,0])
+
+x3=7
+importance.acc.daymedium <- wavelengths[feature.importance.daymedium[,4] > x3]
+importances.accuracy.daymedium <- cbind(importance.acc.daymedium,feature.importance.daymedium[feature.importance.daymedium[,4] > x3,0])
+
+# i=1:length(filenames)
+# plot(hs.norm[i])
+# mtext(expression("Wavenumber [cm"^-1*"]"), side=1, las=1, line =2.5)
+# mtext("Intensity [A.U.]", side=2, las=3, line =2.5)
+# title(expression(paste(italic("E. coli"), " average spectrum")))
+# points(importance.acc.day,seq(0,0,length.out=length(importance.acc.day)), col="red",pch = 16,cex = 1)
+# points(importance.acc.medium,seq(0,0,length.out=length(importance.acc.medium)), col="blue",pch = 16,cex = 1)
+# points(importance.acc.daymedium,seq(0,0,length.out=length(importance.acc.daymedium)), col="grey",pch = 16,cex = 1)
+# legend('topright', legend=c("Day","Medium", "Day and medium"), col=c("red","blue","grey"), cex=0.8, text.font=2,pch = 21)
+
+hsnorm.df = as.t.df (mean_sd (hs.norm))
+
+points.df.day<-as.data.frame(importance.acc.day)
+points.df.medium<-as.data.frame(importance.acc.medium)
+points.df.daymedium<-as.data.frame(importance.acc.daymedium)
+
+colnames(points.df.day)<- ".wavelength"
+colnames(points.df.medium)<- ".wavelength"
+colnames(points.df.daymedium)<- ".wavelength"
+
+plotpeaks<-ggplot (hsnorm.df, aes (x = .wavelength)) +
+     geom_ribbon (aes (ymin = mean-sd, ymax = mean+sd),
+                  fill = "#00000030") +
+     geom_line (aes (y = mean))+
+    ylim(0,0.01)+
+     labs(x= expression("Wavenumber [cm"^-1*"]"), y= "Intensity [A.U.]", title= "Storage time") +   geom_vline(xintercept=points.df.day$.wavelength, color = "red4", size=0.5, show.legend = TRUE)+
+  geom_vline(xintercept=points.df.medium$.wavelength, color = "seagreen", size=0.5)+
+   geom_vline(xintercept=points.df.daymedium$.wavelength, color = "mistyrose4", size=0.5)
+  
+
+plotpeaks + theme(title=element_text(size=20),axis.text=element_text(size=15),
+        axis.title=element_text(size=18,face="bold"))
+
+```
+## 3) LB samples only | *E coli* 2092, 28°C, 24h, 120rpm
+### 3.1) Spectra analysis
+```{r LB_only, include=FALSE,fig.width=1, fig.height=1} 
+
+## 1.1) LB all replicates
+# *E coli* 2092, 28°C, 24h, 120rpm
+
+basefolder = "/media/projects2/CristinaGT/RamanVariability/Spectra/BiologicalReplicates_2medium/"
+path= "/media/projects2/CristinaGT/RamanVariability/Spectra/BiologicalReplicates_2medium/"
+
+# DATA (spc files)
+filenames <- list.files(basefolder, pattern=".spc")
+spectra <- read.spc(paste0(basefolder, filenames[1]))
+wavelengths <- spectra@wavelength
+raw.data <- NULL
+for (i in 1:length(filenames)){
+  data <- read.spc(paste0(basefolder,filenames[i]))
+  raw.data <- rbind(raw.data, data@data$spc) # raw.data contains now only the intensity values
+}
+
+
+# hyperspec --> maldiquant
+mass.spectra <- list()
+for (i in 1:length(filenames)){
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=raw.data[i,])
+  metaData(mass.spectrum) <- list(name=filenames[i])
+  mass.spectra <- c(mass.spectra,mass.spectrum)
+}
+
+
+#### Rename spectra in R ####
+labels <- filenames
+Medium <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[2])))
+Replicate <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[3])))
+ID.spc <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[4])))
+ID <- unlist(lapply(strsplit(ID.spc,split=".spc"),function(x) (x[1])))
+
+cell.name=rep("",length(filenames))
+for (i in 1:length(filenames)) {
+  cell.name[i] <-paste(Medium[i],Replicate[i],collapse=NULL)
+}
+
+
+mq <- list()
+for (i in 1:length(filenames)){
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=raw.data[i,])
+  metaData(mass.spectrum) <- list(name=cell.name[i])
+  mq <- c(mq,mass.spectrum)
+}
+
+## TRIMMING
+# select the biologically relevant part of the fingerprint: 600 - 1800 cm-1 (for dueteriupm 400 - 3200 cm-1?)
+mq.trim <- trim(mq, range=c(600, 1800))
+wavelengths.trim <-  mass(mq.trim[[1]]) #333 (intervals are unequally distributed)
+
+#This chunk of code shows that the intervals between the different wavenumbers are not equal
+interval <- NULL
+name.interval <- NULL
+for (i in 1:length(wavelengths.trim)-1){
+  interval[i] <- wavelengths.trim[i+1]-wavelengths.trim[i]
+  name.interval[i] <- paste(round(wavelengths.trim[i], digits = 4),round(wavelengths.trim[i+1], digits=4), sep=" - ")
+}
+plot(interval, pch = 20, cex = 0.8, bty="l",main = "Interval between wavenumbers", ylab=expression("Size interval [cm"^-1*"]"),xlab=expression("Range wavenumbers [cm"^-1*"]"),xaxt="n")
+axis(at = c(1,332), side = 1, labels = c(name.interval[1],name.interval[322]),las = 0)
+
+
+# BASELINE CORRECTION
+# influence number of iterations?
+library(RColorBrewer)
+iteration.options <- c(5,10,20,30,40,50,100)
+colors <- brewer.pal(7, "Spectral")
+#dev.off()
+layout(rbind(1,2), heights=c(6,1))
+plot(mq.trim[[1]],main = "SNIP baseline correction: influence of iterations", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]]))))
+for (i in 1:length(iteration.options)){
+  baseline <- estimateBaseline(mq.trim[[1]], method="SNIP",iterations=iteration.options[i])
+  lines(baseline,col=colors[i],lwd=2)
+}
+par(mar=c(0, 0, 0, 0))
+plot.new()
+legend('center','groups',legend = iteration.options, lwd=2, lty=c(1,1,1,1,1,1,1),col=colors, ncol=3, bty ="n")
+plot(mq.trim[[1]],main = "SNIP baseline correction: influence of iterations", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]]))))
+for (i in 1:length(iteration.options)){
+  baseline <- estimateBaseline(mq.trim[[1]], method="SNIP",iterations=iteration.options[i])
+  lines(baseline,col=colors[i],lwd=2)
+}
+legend('bottomleft','groups',legend = iteration.options, lwd=2, lty=c(1,1,1,1,1,1,1),col=colors, ncol=3, bty ="o")
+
+# optimal number of iterations?
+number.of.iterations <- 10
+i <- 2
+dev.off()
+plot(mq.trim[[i]],main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[i]])), max(intensity(mq.trim[[i]]))))
+baseline <- estimateBaseline(mq.trim[[i]], method="SNIP",iterations=number.of.iterations)
+lines(baseline,col="blue",lwd=2)
+plot(mq.trim[[i]],main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[i]])), max(intensity(mq.trim[[i]]))))
+baseline <- estimateBaseline(mq.trim[[i]], method="SNIP",iterations=number.of.iterations)
+lines(baseline,col="blue",lwd=2)
+  
+# correct all spectra
+mass.spectra.baseline.corr <- removeBaseline(mq.trim, method="SNIP",iterations=number.of.iterations)
+
+# plot a spectrum to see the effect
+plot(mass.spectra.baseline.corr[[1]], main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mass.spectra.baseline.corr[[i]])), max(intensity(mass.spectra.baseline.corr[[i]]))))
+
+#plot the average of the spectra to see how it looks before I cut
+averagedSpectra <- averageMassSpectra(mass.spectra.baseline.corr)
+plot(averagedSpectra, col="indianred")
+
+## cut region 900-1100 cm-1 - unexpected peak
+#wavelengths <- mass.spectra.baseline.corr@mass
+wavelengths<-wavelengths.trim
+wavelengths_chunk1 <- wavelengths[wavelengths < 900]
+wavelengths_chunk2 <- wavelengths[wavelengths > 1100] 
+new.length <-    length(wavelengths)-length(wavelengths_chunk1)-length(wavelengths_chunk2)
+mass.spectra <- list()
+for (i in 1:length(filenames)){
+  intensity <- mass.spectra.baseline.corr[[i]]@intensity
+  intensity_chunk1 <- intensity[wavelengths < 900]
+  intensity_chunk2 <- intensity[wavelengths > 1100]
+  intensity_new <- rep(0, new.length)
+  intensity.total <-
+    append(append(intensity_chunk1,intensity_new),intensity_chunk2)
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=intensity.total)
+  metaData(mass.spectrum) <- list(name=cell.name[i])
+  mass.spectra <- c(mass.spectra,mass.spectrum) }
+
+#Visualize what I cut
+averagedSpectra_2 <- averageMassSpectra(mass.spectra)
+plot(averagedSpectra_2, add=TRUE)
+
+#I am happy with the new mass.spectra, so I substitute it for mass.spectra.baseline.corr
+mass.spectra.baseline.corr<-mass.spectra
+
+
+
+# NORMALISATION:
+# surface = 1
+# peak maximum normalisation is also possible
+mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
+#plot(mq.norm[[i]], main = "Normalisation", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
+par(mfrow=c(2,1))
+plot(mq.norm[[1]], main = "Normalisation with peak", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
+
+#### change MALDIquant (mq.norm) object in Hyperspec (hs.norm) object ####
+# get the intensity matrix from the mq.norm object
+#matrix.spectra <- matrix(, nrow=  length(mq.norm), ncol = length(wavelengths.trim))
+matrix.spectra <- matrix(nrow=  length(mq.norm), ncol = length(wavelengths))
+for (i in 1:length(mq.norm)){
+  matrix.spectra[i,] <- intensity(mq.norm[[i]])
+}
+
+hs.norm <- new ("hyperSpec", spc = matrix.spectra, wavelength = wavelengths, labels= cell.name)
+rownames(hs.norm) = make.names(cell.name, unique=TRUE)
+#rownames(hs.norm) <- cell.name
+rownames(hs.norm@data$spc) <- cell.name
+colnames(hs.norm@data$spc) <- wavelengths
+
+
+#### calculate the similarity ####
+
+## OPTION 1 
+# using the existing functions in vegan
+# research on FCM data showed that Jaccard and Bray yield similar and good results
+library(vegan)        
+diss <- vegdist(hs.norm[[]], method = 'bray')
+
+
+## OPTION 2 
+# making a customised function
+require(dplyr)
+require(NISTunits)
+## OPTION 1
+# using the existing functions in vegan
+# research on FCM data showed that Jaccard and Bray yield similar and good results
+diss <- vegdist(hs.norm[[]], method = 'bray')
+
+
+## OPTION 3
+# making a customised function
+
+SCA <- function(a, b) {
+  teller <- sum(a*b)
+  kwad1 <- sapply(a, FUN= function(x) x^2)%>%sum()
+  kwad2 <- sapply(b, FUN= function(x) x^2)%>%sum()
+  noemer <- sqrt(kwad1*kwad2)
+  cos <- teller/noemer
+  theta <- NISTradianTOdeg(acos(cos))
+  theta <- theta/90
+  return(theta)
+}
+
+# in the SCA raman the Raman@data$spc is given as matrix in the function with each row containing the cells and each column being a feature
+SCA.raman <- function(x){
+  diss <- matrix( nrow = nrow(x), ncol = nrow(x))
+  for (i in 1:nrow(x)){
+    for (j in 1:nrow(x)) {
+      diss[i,j] <- SCA(x[i,], x[j,])
+      row.names(diss) <- cell.name
+    }
+  }
+  diss <- as.dist(diss)
+  attr(diss, "method") <- "SCA.raman"
+  return(diss)
+}
+
+# Calculate the spectral contrast angle
+similarity <- SCA.raman(hs.norm@data$spc)
+
+#New name to export to iTOL
+
+# cell.name=rep(" ",length(filenames))
+# for (i in 1:length(filenames)) {
+#   cell.name[i] <-paste(Medium[i],Replicate[i],collapse=NULL)
+# }
+# 
+# rownames(hs.norm@data$spc) <- make.unique(cell.name,sep = "_")
+# rownames(hs.norm) <- make.unique(cell.name,sep = "_")
+# similarity.itol <- SCA.raman(hs.norm@data$spc)
+# 
+# dendrogram.itol <- hclust(similarity.itol, method="ward.D2")
+# dendrogram.itol$tip.label <- make.unique(cell.name,sep = "_")
+# library(ape)
+# dendrogram.itol <- as.phylo(dendrogram.itol)
+# write.tree(dendrogram.itol, file = "Dendrogram_LBvsNB", digits = 10)
+# 
+
+# making a dendrogram based on the calculated similarity matrix
+dendrogram <- hclust(similarity, method="ward.D2")
+plot(dendrogram)
+
+#### at the given height calculate what cell is in what cluster ####
+clusters<- as.matrix(cutree(dendrogram, h= 0.7))
+plot(dendrogram)
+rect.hclust(dendrogram, k=max(clusters), border="red")
+
+## The tree at 0.75 has 8 clusters (k)
+k <- 8
+cols <- rainbow_hcl(k)
+dend <- as.dendrogram(dendrogram)
+dend <- color_branches(dend, k = k)
+
+
+# Set colors and shapes code
+groupCodes<- c(rep("LBrep1", 45), rep("LBrep2", 45), rep("LBrep3", 44))
+rownames(hs.norm) <- make.unique(groupCodes)
+
+colorCodes <- c(LBrep1="steelblue1", LBrep2="steelblue", LBrep3="steelblue4")
+labels_colors(dend) <- colorCodes[groupCodes][order.dendrogram(dend)]
+
+leaves_col<-colorCodes[groupCodes][order.dendrogram(dend)]
+
+shapeCodes <- c(LBrep1=8,LBrep2=17,LBrep3=13)
+leaves_pch<-shapeCodes[groupCodes][order.dendrogram(dend)]
+
+dend %>% set("leaves_pch", leaves_pch) %>%  # node point type
+  set("leaves_cex", 0.7) %>%  # node point size
+  set("leaves_col", leaves_col) %>% #node point color
+  #set("branches_col", leaves_col) %>%
+  #par(mar = rep(0,4))
+  #circlize_dendrogram(dend, labels_track_height = NA, dend_track_height = .4) 
+  plot(main = "Phenotypes and replicates", ylab="Height", leaflab="none",  type = "rectangle")
+  legend('topright',c("LB rep1", "LB rep2", "LB rep3") , pch= c(8,17,13),col=c("steelblue1", "steelblue", "steelblue4"))
+
+         
+#par(mar = rep(0,4))
+# circlize_dendrogram(dend, dend_track_height = 0.8) 
+#circlize_dendrogram(dend, labels_track_height = NA, dend_track_height = .4) 
+
+
+### Plot separated trees
+
+labels_dend <- labels(dend)
+groups <- cutree(dend, k=8, order_clusters_as_data = TRUE)
+dends <- list()
+
+for(i in 1:k) {
+  labels_to_keep <- labels_dend[i != groups]
+  dends[[i]] <- prune(dend, labels_to_keep)
+}
+
+par(mfrow = c(2,2))
+
+for(i in 1:k) { 
+  plot(dends[[i]], 
+       main = paste0("Tree number ", i))
+}
+
+
+
+##Automatic cluter plot depending on groups
+
+hs.norm$clusters<- as.factor(cutree(dendrogram, k=5))
+clusters<- as.matrix(cutree(dendrogram, k=5))
+
+par(mfrow = c(2,2))
+c1=subset(hs.norm,clusters==1)
+plot(c1)
+c2=subset(hs.norm,clusters==2)
+plot(c2)
+c3=subset(hs.norm,clusters==3)
+plot(c3)
+c4=subset(hs.norm,clusters==4)
+plot(c4)
+c5=subset(hs.norm,clusters==5)
+plot(c5)
+
+
+
+#### PCA ####
+# this notation gives very different and bad results but why? what does "~" mean?
+
+library('factoextra')
+labels <- groupCodes
+
+# PCA alternatuve from Jasmine
+res.PCA <- prcomp(hs.norm$.) 
+p <- fviz_pca_ind(res.PCA, label='none', habillage=labels,pointsize = 4)# addEllipses=TRUE, ellipse.level=0.95)
+p +labs(title = "PCA" ) + theme_minimal()
+p + scale_color_manual(values=c("steelblue1", "steelblue", "steelblue4")) +
+                       scale_shape_manual(values=c(8,17,13))
+
+plot(res.PCA)
+summary(res.PCA)  
+```
+### 3.2) Random forest: RF and VSURF
+```{r LBonly_RF, include=FALSE}
+#### RF ####
+# put the intensity values in a dataframe
+df <- as.data.frame(hs.norm@data$spc, col.names=hs.norm@wavelength , check.names=TRUE)
+names(df) <- make.names(names(df)) 
+
+# make groups
+groups <- c(rep("LB", 134), rep("NB", 134))
+
+# concatenate the column with the groups to the original data frame 
+df <- cbind(df, groups)
+
+# 75% of the sample size
+smp_size <- floor(0.75 * nrow(df))
+
+# set the seed to make your partition reproducible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(df)), size = smp_size) 
+train <- df[train_ind, ] # this set is 75% of all samples 
+test <- df[-train_ind, ] # this one is the other 25%
+
+# Random Forests package
+library(randomForest)
+
+# model training
+RF <- randomForest(groups ~. , data = train, ntree=1000,
+                   importance=TRUE) # as.factor is not required
+
+
+# number of predictors presented at each split sqrt(p) (=default)
+predictions <- predict(RF, test) 
+accuracy <- mean(predictions == test$groups) 
+accuracy
+table(test$groups, predictions)
+feature.importance <- importance(RF)
+varImpPlot(RF,type=1) # type = 1 for accuracy, 2 for Gini impurity
+#, Gini impurity is a measure of how often a randomly chosen element from the set would be incorrectly labeled if it #was randomly labeled according to the distribution of labels in the subset
+
+# all higher than x? 
+x = 3
+importance.acc <- wavelengths[feature.importance[,4] > x]
+importances.accuracy <- cbind(importance.acc,feature.importance[feature.importance[,4] > x,0])
+
+i=(1:268)
+plotspc(hs.norm[i],add=TRUE,spc.nmax = 100)
+mtext(expression("Wavenumber [cm"^-1*"]"), side=1, las=1, line =2.5)
+mtext("Intensity [A.U.]", side=2, las=3, line =2.5)
+title(expression(paste(italic("E. coli"), " average spectrum")))
+points(importance.acc,seq(0,0,length.out=length(importance.acc)), col="red",pch = 16,cex = 1.5)
+
+```
+## 4) NB samples only | *E coli* 2092, 28°C, 24h, 120rpm
+### 4.1) Spectra analysis
+```{r NB_only, include=FALSE,fig.width=1, fig.height=1} 
+## 1.2) NB only
+# *E coli* 2092, 28°C, 24h, 120rpm // day5, day12
+
+basefolder = "/media/projects2/CristinaGT/RamanVariability/Spectra/BiologicalReplicates_2medium/NB/"
+path= "/media/projects2/CristinaGT/RamanVariability/Spectra/BiologicalReplicates_2medium/NB/"
+
+# DATA (spc files)
+filenames <- list.files(basefolder, pattern=".spc")
+spectra <- read.spc(paste0(basefolder, filenames[1]))
+wavelengths <- spectra@wavelength
+raw.data <- NULL
+for (i in 1:length(filenames)){
+  data <- read.spc(paste0(basefolder,filenames[i]))
+  raw.data <- rbind(raw.data, data@data$spc) # raw.data contains now only the intensity values
+}
+
+
+# hyperspec --> maldiquant
+mass.spectra <- list()
+for (i in 1:length(filenames)){
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=raw.data[i,])
+  metaData(mass.spectrum) <- list(name=filenames[i])
+  mass.spectra <- c(mass.spectra,mass.spectrum)
+}
+
+
+#### Rename spectra in R ####
+labels <- filenames
+Medium <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[2])))
+Replicate <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[3])))
+ID.spc <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[4])))
+ID <- unlist(lapply(strsplit(ID.spc,split=".spc"),function(x) (x[1])))
+
+cell.name=rep("",length(filenames))
+for (i in 1:length(filenames)) {
+  cell.name[i] <-paste(Medium[i],Replicate[i],collapse=NULL)
+}
+
+
+mq <- list()
+for (i in 1:length(filenames)){
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=raw.data[i,])
+  metaData(mass.spectrum) <- list(name=cell.name[i])
+  mq <- c(mq,mass.spectrum)
+}
+
+## TRIMMING
+# select the biologically relevant part of the fingerprint: 600 - 1800 cm-1 (for dueteriupm 400 - 3200 cm-1?)
+mq.trim <- trim(mq, range=c(600, 1800))
+wavelengths.trim <-  mass(mq.trim[[1]]) #333 (intervals are unequally distributed)
+
+#This chunk of code shows that the intervals between the different wavenumbers are not equal
+interval <- NULL
+name.interval <- NULL
+for (i in 1:length(wavelengths.trim)-1){
+  interval[i] <- wavelengths.trim[i+1]-wavelengths.trim[i]
+  name.interval[i] <- paste(round(wavelengths.trim[i], digits = 4),round(wavelengths.trim[i+1], digits=4), sep=" - ")
+}
+plot(interval, pch = 20, cex = 0.8, bty="l",main = "Interval between wavenumbers", ylab=expression("Size interval [cm"^-1*"]"),xlab=expression("Range wavenumbers [cm"^-1*"]"),xaxt="n")
+axis(at = c(1,332), side = 1, labels = c(name.interval[1],name.interval[322]),las = 0)
+
+
+# BASELINE CORRECTION
+# influence number of iterations?
+library(RColorBrewer)
+iteration.options <- c(5,10,20,30,40,50,100)
+colors <- brewer.pal(7, "Spectral")
+#dev.off()
+layout(rbind(1,2), heights=c(6,1))
+plot(mq.trim[[1]],main = "SNIP baseline correction: influence of iterations", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]]))))
+for (i in 1:length(iteration.options)){
+  baseline <- estimateBaseline(mq.trim[[1]], method="SNIP",iterations=iteration.options[i])
+  lines(baseline,col=colors[i],lwd=2)
+}
+par(mar=c(0, 0, 0, 0))
+plot.new()
+legend('center','groups',legend = iteration.options, lwd=2, lty=c(1,1,1,1,1,1,1),col=colors, ncol=3, bty ="n")
+plot(mq.trim[[1]],main = "SNIP baseline correction: influence of iterations", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]]))))
+for (i in 1:length(iteration.options)){
+  baseline <- estimateBaseline(mq.trim[[1]], method="SNIP",iterations=iteration.options[i])
+  lines(baseline,col=colors[i],lwd=2)
+}
+legend('bottomleft','groups',legend = iteration.options, lwd=2, lty=c(1,1,1,1,1,1,1),col=colors, ncol=3, bty ="o")
+
+# optimal number of iterations?
+number.of.iterations <- 10
+i <- 2
+dev.off()
+plot(mq.trim[[i]],main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[i]])), max(intensity(mq.trim[[i]]))))
+baseline <- estimateBaseline(mq.trim[[i]], method="SNIP",iterations=number.of.iterations)
+lines(baseline,col="blue",lwd=2)
+plot(mq.trim[[i]],main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[i]])), max(intensity(mq.trim[[i]]))))
+baseline <- estimateBaseline(mq.trim[[i]], method="SNIP",iterations=number.of.iterations)
+lines(baseline,col="blue",lwd=2)
+  
+# correct all spectra
+mass.spectra.baseline.corr <- removeBaseline(mq.trim, method="SNIP",iterations=number.of.iterations)
+
+# plot a spectrum to see the effect
+plot(mass.spectra.baseline.corr[[1]], main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mass.spectra.baseline.corr[[i]])), max(intensity(mass.spectra.baseline.corr[[i]]))))
+
+#plot the average of the spectra to see how it looks before I cut
+averagedSpectra <- averageMassSpectra(mass.spectra.baseline.corr)
+plot(averagedSpectra, col="indianred")
+
+## cut region 900-1100 cm-1 - unexpected peak
+#wavelengths <- mass.spectra.baseline.corr@mass
+wavelengths<-wavelengths.trim
+wavelengths_chunk1 <- wavelengths[wavelengths < 900]
+wavelengths_chunk2 <- wavelengths[wavelengths > 1100] 
+new.length <-    length(wavelengths)-length(wavelengths_chunk1)-length(wavelengths_chunk2)
+mass.spectra <- list()
+for (i in 1:length(filenames)){
+  intensity <- mass.spectra.baseline.corr[[i]]@intensity
+  intensity_chunk1 <- intensity[wavelengths < 900]
+  intensity_chunk2 <- intensity[wavelengths > 1100]
+  intensity_new <- rep(0, new.length)
+  intensity.total <-
+    append(append(intensity_chunk1,intensity_new),intensity_chunk2)
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=intensity.total)
+  metaData(mass.spectrum) <- list(name=cell.name[i])
+  mass.spectra <- c(mass.spectra,mass.spectrum) }
+
+#Visualize what I cut
+averagedSpectra_2 <- averageMassSpectra(mass.spectra)
+plot(averagedSpectra_2, add=TRUE)
+
+#I am happy with the new mass.spectra, so I substitute it for mass.spectra.baseline.corr
+mass.spectra.baseline.corr<-mass.spectra
+
+
+# NORMALISATION:
+# surface = 1
+# peak maximum normalisation is also possible
+mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
+#plot(mq.norm[[i]], main = "Normalisation", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
+par(mfrow=c(2,1))
+plot(mq.norm[[1]], main = "Normalisation with peak", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
+
+#### change MALDIquant (mq.norm) object in Hyperspec (hs.norm) object ####
+# get the intensity matrix from the mq.norm object
+#matrix.spectra <- matrix(, nrow=  length(mq.norm), ncol = length(wavelengths.trim))
+matrix.spectra <- matrix(nrow=  length(mq.norm), ncol = length(wavelengths))
+for (i in 1:length(mq.norm)){
+  matrix.spectra[i,] <- intensity(mq.norm[[i]])
+}
+
+hs.norm <- new ("hyperSpec", spc = matrix.spectra, wavelength = wavelengths, labels= cell.name)
+rownames(hs.norm) = make.names(cell.name, unique=TRUE)
+#rownames(hs.norm) <- cell.name
+rownames(hs.norm@data$spc) <- cell.name
+colnames(hs.norm@data$spc) <- wavelengths
+
+
+#### calculate the similarity ####
+
+## OPTION 1 
+# using the existing functions in vegan
+# research on FCM data showed that Jaccard and Bray yield similar and good results
+library(vegan)        
+diss <- vegdist(hs.norm[[]], method = 'bray')
+
+
+## OPTION 2 
+# making a customised function
+require(dplyr)
+require(NISTunits)
+## OPTION 1
+# using the existing functions in vegan
+# research on FCM data showed that Jaccard and Bray yield similar and good results
+diss <- vegdist(hs.norm[[]], method = 'bray')
+
+
+## OPTION 2
+# making a customised function
+
+SCA <- function(a, b) {
+  teller <- sum(a*b)
+  kwad1 <- sapply(a, FUN= function(x) x^2)%>%sum()
+  kwad2 <- sapply(b, FUN= function(x) x^2)%>%sum()
+  noemer <- sqrt(kwad1*kwad2)
+  cos <- teller/noemer
+  theta <- NISTradianTOdeg(acos(cos))
+  theta <- theta/90
+  return(theta)
+}
+
+# in the SCA raman the Raman@data$spc is given as matrix in the function with each row containing the cells and each column being a feature
+SCA.raman <- function(x){
+  diss <- matrix( nrow = nrow(x), ncol = nrow(x))
+  for (i in 1:nrow(x)){
+    for (j in 1:nrow(x)) {
+      diss[i,j] <- SCA(x[i,], x[j,])
+      row.names(diss) <- cell.name
+    }
+  }
+  diss <- as.dist(diss)
+  attr(diss, "method") <- "SCA.raman"
+  return(diss)
+}
+
+# Calculate the spectral contrast angle
+similarity <- SCA.raman(hs.norm@data$spc)
+
+
+# making a dendrogram based on the calculated similarity matrix
+dendrogram <- hclust(similarity, method="ward.D2")
+plot(dendrogram)
+
+#### at the given height calculate what cell is in what cluster ####
+clusters<- as.matrix(cutree(dendrogram, h= 0.7))
+plot(dendrogram)
+rect.hclust(dendrogram, k=max(clusters), border="red")
+
+## The tree at 0.75 has 8 clusters (k)
+k <- 8
+cols <- rainbow_hcl(k)
+dend <- as.dendrogram(dendrogram)
+dend <- color_branches(dend, k = k)
+
+
+# Set colors and shapes code
+groupCodes<- c(rep("NBrep1", 45), rep("NBrep2", 44), rep("NBrep3", 45))
+rownames(hs.norm) <- make.unique(groupCodes)
+
+colorCodes <- c(NBrep1="indianred1", NBrep2="indianred", NBrep3="indianred4")
+labels_colors(dend) <- colorCodes[groupCodes][order.dendrogram(dend)]
+
+leaves_col<-colorCodes[groupCodes][order.dendrogram(dend)]
+
+shapeCodes <- c(NBrep1=8,NBrep2=17,NBrep3=13)
+leaves_pch<-shapeCodes[groupCodes][order.dendrogram(dend)]
+
+dend %>% set("leaves_pch", leaves_pch) %>%  # node point type
+  set("leaves_cex", 2) %>%  # node point size
+  set("leaves_col", leaves_col) %>% #node point color
+  #set("branches_col", leaves_col) %>%
+  #par(mar = rep(0,4))
+  #circlize_dendrogram(dend, labels_track_height = NA, dend_track_height = .4) 
+  plot(main = "Phenotypes and replicates", ylab="Height", leaflab="none",  type = "rectangle")
+legend('topright',c("NB rep1", "NB rep2", "NB rep3") , pch= c(8,17,13),col=c("indianred1", "indianred", "indianred4"))
+
+
+#par(mar = rep(0,4))
+# circlize_dendrogram(dend, dend_track_height = 0.8) 
+#circlize_dendrogram(dend, labels_track_height = NA, dend_track_height = .4) 
+
+
+### Plot separated trees
+
+labels_dend <- labels(dend)
+groups <- cutree(dend, k=8, order_clusters_as_data = TRUE)
+dends <- list()
+
+for(i in 1:k) {
+  labels_to_keep <- labels_dend[i != groups]
+  dends[[i]] <- prune(dend, labels_to_keep)
+}
+
+par(mfrow = c(2,2))
+
+for(i in 1:k) { 
+  plot(dends[[i]], 
+       main = paste0("Tree number ", i))
+}
+
+
+
+##Automatic cluter plot depending on groups
+
+hs.norm$clusters<- as.factor(cutree(dendrogram, k=5))
+clusters<- as.matrix(cutree(dendrogram, k=5))
+
+par(mfrow = c(2,2))
+c1=subset(hs.norm,clusters==1)
+plot(c1)
+c2=subset(hs.norm,clusters==2)
+plot(c2)
+c3=subset(hs.norm,clusters==3)
+plot(c3)
+c4=subset(hs.norm,clusters==4)
+plot(c4)
+c5=subset(hs.norm,clusters==5)
+plot(c5)
+
+
+
+#### PCA ####
+# this notation gives very different and bad results but why? what does "~" mean?
+
+library('factoextra')
+labels <- groupCodes
+
+# PCA alternatuve from Jasmine
+res.PCA <- prcomp(hs.norm$.) 
+p <- fviz_pca_ind(res.PCA, label='none', habillage=labels,pointsize = 4)# addEllipses=TRUE, ellipse.level=0.95)
+p +labs(title = "PCA" ) + theme_minimal()
+p + scale_color_manual(values=c("indianred1", "indianred", "indianred4")) +
+  scale_shape_manual(values=c(8,17,13))
+
+plot(res.PCA)
+summary(res.PCA)  
+
+```
+### 4.2) Random forest: RF and VSURF
+```{r NBonly_RF, include=FALSE}
+
+```
+## 5) LB and NB replicate 1
+### 5.1) Spectra analysis
+```{r NBvsLB_rep1, include=FALSE,fig.width=1, fig.height=1} 
+
+## 1.2) NB vs LB rep1
+# *E coli* 2092, 28°C, 24h, 120rpm
+
+basefolder = "/media/projects2/CristinaGT/RamanVariability/Spectra/BiologicalReplicates_2medium/LB_NB_rep1/"
+path= "/media/projects2/CristinaGT/RamanVariability/Spectra/BiologicalReplicates_2medium/LB_NB_rep1"
+
+# DATA (spc files)
+filenames <- list.files(basefolder, pattern=".spc")
+spectra <- read.spc(paste0(basefolder, filenames[1]))
+wavelengths <- spectra@wavelength
+raw.data <- NULL
+for (i in 1:length(filenames)){
+  data <- read.spc(paste0(basefolder,filenames[i]))
+  raw.data <- rbind(raw.data, data@data$spc) # raw.data contains now only the intensity values
+}
+
+
+# hyperspec --> maldiquant
+mass.spectra <- list()
+for (i in 1:length(filenames)){
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=raw.data[i,])
+  metaData(mass.spectrum) <- list(name=filenames[i])
+  mass.spectra <- c(mass.spectra,mass.spectrum)
+}
+
+
+#### Rename spectra in R ####
+labels <- filenames
+Medium <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[2])))
+Replicate <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[3])))
+ID.spc <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[4])))
+ID <- unlist(lapply(strsplit(ID.spc,split=".spc"),function(x) (x[1])))
+
+cell.name=rep("",length(filenames))
+for (i in 1:length(filenames)) {
+  cell.name[i] <-paste(Medium[i],Replicate[i],collapse=NULL)
+}
+
+
+mq <- list()
+for (i in 1:length(filenames)){
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=raw.data[i,])
+  metaData(mass.spectrum) <- list(name=cell.name[i])
+  mq <- c(mq,mass.spectrum)
+}
+
+## TRIMMING
+# select the biologically relevant part of the fingerprint: 600 - 1800 cm-1 (for dueteriupm 400 - 3200 cm-1?)
+mq.trim <- trim(mq, range=c(600, 1800))
+wavelengths.trim <-  mass(mq.trim[[1]]) #333 (intervals are unequally distributed)
+
+#This chunk of code shows that the intervals between the different wavenumbers are not equal
+interval <- NULL
+name.interval <- NULL
+for (i in 1:length(wavelengths.trim)-1){
+  interval[i] <- wavelengths.trim[i+1]-wavelengths.trim[i]
+  name.interval[i] <- paste(round(wavelengths.trim[i], digits = 4),round(wavelengths.trim[i+1], digits=4), sep=" - ")
+}
+plot(interval, pch = 20, cex = 0.8, bty="l",main = "Interval between wavenumbers", ylab=expression("Size interval [cm"^-1*"]"),xlab=expression("Range wavenumbers [cm"^-1*"]"),xaxt="n")
+axis(at = c(1,332), side = 1, labels = c(name.interval[1],name.interval[322]),las = 0)
+
+
+# BASELINE CORRECTION
+# influence number of iterations?
+library(RColorBrewer)
+iteration.options <- c(5,10,20,30,40,50,100)
+colors <- brewer.pal(7, "Spectral")
+#dev.off()
+layout(rbind(1,2), heights=c(6,1))
+plot(mq.trim[[1]],main = "SNIP baseline correction: influence of iterations", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]]))))
+for (i in 1:length(iteration.options)){
+  baseline <- estimateBaseline(mq.trim[[1]], method="SNIP",iterations=iteration.options[i])
+  lines(baseline,col=colors[i],lwd=2)
+}
+par(mar=c(0, 0, 0, 0))
+plot.new()
+legend('center','groups',legend = iteration.options, lwd=2, lty=c(1,1,1,1,1,1,1),col=colors, ncol=3, bty ="n")
+plot(mq.trim[[1]],main = "SNIP baseline correction: influence of iterations", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]]))))
+for (i in 1:length(iteration.options)){
+  baseline <- estimateBaseline(mq.trim[[1]], method="SNIP",iterations=iteration.options[i])
+  lines(baseline,col=colors[i],lwd=2)
+}
+legend('bottomleft','groups',legend = iteration.options, lwd=2, lty=c(1,1,1,1,1,1,1),col=colors, ncol=3, bty ="o")
+
+# optimal number of iterations?
+number.of.iterations <- 10
+i <- 2
+dev.off()
+plot(mq.trim[[i]],main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[i]])), max(intensity(mq.trim[[i]]))))
+baseline <- estimateBaseline(mq.trim[[i]], method="SNIP",iterations=number.of.iterations)
+lines(baseline,col="blue",lwd=2)
+plot(mq.trim[[i]],main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[i]])), max(intensity(mq.trim[[i]]))))
+baseline <- estimateBaseline(mq.trim[[i]], method="SNIP",iterations=number.of.iterations)
+lines(baseline,col="blue",lwd=2)
+  
+# correct all spectra
+mass.spectra.baseline.corr <- removeBaseline(mq.trim, method="SNIP",iterations=number.of.iterations)
+
+# plot a spectrum to see the effect
+plot(mass.spectra.baseline.corr[[1]], main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mass.spectra.baseline.corr[[i]])), max(intensity(mass.spectra.baseline.corr[[i]]))))
+
+#plot the average of the spectra to see how it looks before I cut
+averagedSpectra <- averageMassSpectra(mass.spectra.baseline.corr)
+plot(averagedSpectra, col="indianred")
+
+## cut region 900-1100 cm-1 - unexpected peak
+#wavelengths <- mass.spectra.baseline.corr@mass
+wavelengths<-wavelengths.trim
+wavelengths_chunk1 <- wavelengths[wavelengths < 900]
+wavelengths_chunk2 <- wavelengths[wavelengths > 1100] 
+new.length <-    length(wavelengths)-length(wavelengths_chunk1)-length(wavelengths_chunk2)
+mass.spectra <- list()
+for (i in 1:length(filenames)){
+  intensity <- mass.spectra.baseline.corr[[i]]@intensity
+  intensity_chunk1 <- intensity[wavelengths < 900]
+  intensity_chunk2 <- intensity[wavelengths > 1100]
+  intensity_new <- rep(0, new.length)
+  intensity.total <-
+    append(append(intensity_chunk1,intensity_new),intensity_chunk2)
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=intensity.total)
+  metaData(mass.spectrum) <- list(name=cell.name[i])
+  mass.spectra <- c(mass.spectra,mass.spectrum) }
+
+#Visualize what I cut
+averagedSpectra_2 <- averageMassSpectra(mass.spectra)
+plot(averagedSpectra_2, add=TRUE)
+
+#I am happy with the new mass.spectra, so I substitute it for mass.spectra.baseline.corr
+mass.spectra.baseline.corr<-mass.spectra
+
+
+# NORMALISATION:
+# surface = 1
+# peak maximum normalisation is also possible
+mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
+#plot(mq.norm[[i]], main = "Normalisation", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
+par(mfrow=c(2,1))
+plot(mq.norm[[1]], main = "Normalisation with peak", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
+
+#### change MALDIquant (mq.norm) object in Hyperspec (hs.norm) object ####
+# get the intensity matrix from the mq.norm object
+#matrix.spectra <- matrix(, nrow=  length(mq.norm), ncol = length(wavelengths.trim))
+matrix.spectra <- matrix(nrow=  length(mq.norm), ncol = length(wavelengths))
+for (i in 1:length(mq.norm)){
+  matrix.spectra[i,] <- intensity(mq.norm[[i]])
+}
+
+hs.norm <- new ("hyperSpec", spc = matrix.spectra, wavelength = wavelengths, labels= cell.name)
+rownames(hs.norm) = make.names(cell.name, unique=TRUE)
+#rownames(hs.norm) <- cell.name
+rownames(hs.norm@data$spc) <- cell.name
+colnames(hs.norm@data$spc) <- wavelengths
+
+
+#### calculate the similarity ####
+
+## OPTION 1 
+# using the existing functions in vegan
+# research on FCM data showed that Jaccard and Bray yield similar and good results
+library(vegan)        
+diss <- vegdist(hs.norm[[]], method = 'bray')
+
+
+## OPTION 2 
+# making a customised function
+require(dplyr)
+require(NISTunits)
+## OPTION 1
+# using the existing functions in vegan
+# research on FCM data showed that Jaccard and Bray yield similar and good results
+diss <- vegdist(hs.norm[[]], method = 'bray')
+
+
+## OPTION 2
+# making a customised function
+
+SCA <- function(a, b) {
+  teller <- sum(a*b)
+  kwad1 <- sapply(a, FUN= function(x) x^2)%>%sum()
+  kwad2 <- sapply(b, FUN= function(x) x^2)%>%sum()
+  noemer <- sqrt(kwad1*kwad2)
+  cos <- teller/noemer
+  theta <- NISTradianTOdeg(acos(cos))
+  theta <- theta/90
+  return(theta)
+}
+
+# in the SCA raman the Raman@data$spc is given as matrix in the function with each row containing the cells and each column being a feature
+SCA.raman <- function(x){
+  diss <- matrix( nrow = nrow(x), ncol = nrow(x))
+  for (i in 1:nrow(x)){
+    for (j in 1:nrow(x)) {
+      diss[i,j] <- SCA(x[i,], x[j,])
+      row.names(diss) <- cell.name
+    }
+  }
+  diss <- as.dist(diss)
+  attr(diss, "method") <- "SCA.raman"
+  return(diss)
+}
+
+# Calculate the spectral contrast angle
+similarity <- SCA.raman(hs.norm@data$spc)
+
+
+# making a dendrogram based on the calculated similarity matrix
+dendrogram <- hclust(similarity, method="ward.D2")
+plot(dendrogram)
+
+#### at the given height calculate what cell is in what cluster ####
+clusters<- as.matrix(cutree(dendrogram, h= 0.7))
+plot(dendrogram)
+rect.hclust(dendrogram, k=max(clusters), border="red")
+
+## The tree at 0.75 has 8 clusters (k)
+k <- 2
+cols <- c("steelblue","indianred")
+dend <- as.dendrogram(dendrogram)
+dend <- color_branches(dend, k = k, col = cols)
+
+
+# Set colors and shapes code
+groupCodes<- c(rep("LBrep1", 45), rep("NBrep1", 45))
+rownames(hs.norm) <- make.unique(groupCodes)
+
+colorCodes <- c(LBrep1="steelblue", NBrep1="indianred")
+labels_colors(dend) <- colorCodes[groupCodes][order.dendrogram(dend)]
+
+leaves_col<-colorCodes[groupCodes][order.dendrogram(dend)]
+
+shapeCodes <- c(LBrep1=8,NBrep1=17)
+leaves_pch<-shapeCodes[groupCodes][order.dendrogram(dend)]
+
+dend %>% set("leaves_pch", leaves_pch) %>%  # node point type
+  set("leaves_cex", 1) %>%  # node point size
+  set("leaves_col", leaves_col) %>% #node point color
+  #set("branches_col", k=2) %>%
+  #par(mar = rep(0,4))
+  #circlize_dendrogram(dend, labels_track_height = NA, dend_track_height = .4) 
+  plot(main = "Dendrogram LB vs NB", ylab="Height", leaflab="none",  type = "rectangle")
+  legend('topright',c("LB rep1", "NB rep1") , pch= c(8,17),col=c("steelblue", "indianred"))
+ 
+  
+   
+ 
+#par(mar = rep(0,4))
+# circlize_dendrogram(dend, dend_track_height = 0.8) 
+#circlize_dendrogram(dend, labels_track_height = NA, dend_track_height = .4) 
+
+
+### Plot separated trees
+
+labels_dend <- labels(dend)
+groups <- cutree(dend, k=8, order_clusters_as_data = TRUE)
+dends <- list()
+
+for(i in 1:k) {
+  labels_to_keep <- labels_dend[i != groups]
+  dends[[i]] <- prune(dend, labels_to_keep)
+}
+
+par(mfrow = c(2,2))
+
+for(i in 1:k) { 
+  plot(dends[[i]], 
+       main = paste0("Tree number ", i))
+}
+
+
+
+##Automatic cluter plot depending on groups
+
+hs.norm$clusters<- as.factor(cutree(dendrogram, k=5))
+clusters<- as.matrix(cutree(dendrogram, k=5))
+
+par(mfrow = c(2,2))
+c1=subset(hs.norm,clusters==1)
+plot(c1)
+c2=subset(hs.norm,clusters==2)
+plot(c2)
+c3=subset(hs.norm,clusters==3)
+plot(c3)
+c4=subset(hs.norm,clusters==4)
+plot(c4)
+c5=subset(hs.norm,clusters==5)
+plot(c5)
+
+
+
+#### PCA ####
+# this notation gives very different and bad results but why? what does "~" mean?
+
+library('factoextra')
+labels <- groupCodes
+
+# PCA alternatuve from Jasmine
+res.PCA <- prcomp(hs.norm$.) 
+p <- fviz_pca_ind(res.PCA, label='none', habillage=labels,pointsize = 2)# addEllipses=TRUE, ellipse.level=0.95)
+p +labs(title = "PCA" ) + theme_minimal()
+p + scale_color_manual(values=c("steelblue", "indianred")) +
+                       scale_shape_manual(values=c(8,17))
+
+plot(res.PCA)
+summary(res.PCA)  
+
+
+         
+
+
+```
+### 5.2) Random forest: RF and VSURF
+```{r NBvsLB_rep1_RF, include=FALSE}
+```
+
+```{r StorageEffect_RF, include=FALSE}
+```
+## 6) Dry and spin effect | *E coli* 2092, 28°C, 24h, 120rpm // Day1, day5, day12
+### 6.1) Spectra analysis
+```{r DrySpinEffect, include=FALSE}
+#opts_chunk$set(comment=NA, fig.width=12, fig.height=12)
+require("knitr")
+opts_knit$set(root.dir = "/media/projects2/CristinaGT/RamanVariability/Spectra/BiologicalReplicates_2medium/")
+## 3) DrySpinEffect
+# *E coli* 2092, 28°C, 24h, 120rpm // Day1, day5, day12
+
+#### Basefolder and working directory ####
+baseFolder = "/media/projects2/CristinaGT/RamanVariability/Spectra/Spin-DryEffect/"
+path= "/media/projects2/CristinaGT/RamanVariability/Spectra/Spin-DryEffect/"
+
+# DATA (spc files)
+filenames <- list.files(basefolder, pattern=".spc")
+spectra <- read.spc(paste0(basefolder, filenames[1]))
+wavelengths <- spectra@wavelength
+raw.data <- NULL
+for (i in 1:length(filenames)){
+  data <- read.spc(paste0(basefolder,filenames[i]))
+  raw.data <- rbind(raw.data, data@data$spc) # raw.data contains now only the intensity values
+}
+
+
+# hyperspec --> maldiquant
+mass.spectra <- list()
+for (i in 1:length(filenames)){
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=raw.data[i,])
+  metaData(mass.spectrum) <- list(name=filenames[i])
+  mass.spectra <- c(mass.spectra,mass.spectrum)
+}
+
+ 
+  #### Rename spectra in R ####
+labels <- filenames
+Medium <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[2])))
+Replicate <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[3])))
+ID.spc <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[4])))
+ID <- unlist(lapply(strsplit(ID.spc,split=".spc"),function(x) (x[1])))
+
+cell.name=rep("",length(filenames))
+for (i in 1:length(filenames)) {
+  cell.name[i] <-paste(Medium[i],Replicate[i],ID[i],collapse=NULL)
+}
+
+ 
+  mq <- list()
+for (i in 1:length(filenames)){
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=raw.data[i,])
+  metaData(mass.spectrum) <- list(name=cell.name[i])
+  mq <- c(mq,mass.spectrum)
+}
+  
+## TRIMMING
+# select the biologically relevant part of the fingerprint: 600 - 1800 cm-1 (for dueteriupm 400 - 3200 cm-1?)
+mq.trim <- trim(mq, range=c(600, 1800))
+wavelengths.trim <-  mass(mq.trim[[1]]) #333 (intervals are unequally distributed)
+
+#This chunk of code shows that the intervals between the different wavenumbers are not equal
+interval <- NULL
+name.interval <- NULL
+for (i in 1:length(wavelengths.trim)-1){
+  interval[i] <- wavelengths.trim[i+1]-wavelengths.trim[i]
+  name.interval[i] <- paste(round(wavelengths.trim[i], digits = 4),round(wavelengths.trim[i+1], digits=4), sep=" - ")
+}
+plot(interval, pch = 20, cex = 0.8, bty="l",main = "Interval between wavenumbers", ylab=expression("Size interval [cm"^-1*"]"),xlab=expression("Range wavenumbers [cm"^-1*"]"),xaxt="n")
+axis(at = c(1,332), side = 1, labels = c(name.interval[1],name.interval[322]),las = 0)
+
+
+# BASELINE CORRECTION
+# influence number of iterations?
+library(RColorBrewer)
+iteration.options <- c(5,10,20,30,40,50,100)
+colors <- brewer.pal(7, "Spectral")
+#dev.off()
+layout(rbind(1,2), heights=c(6,1))
+plot(mq.trim[[1]],main = "SNIP baseline correction: influence of iterations", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]]))))
+for (i in 1:length(iteration.options)){
+  baseline <- estimateBaseline(mq.trim[[1]], method="SNIP",iterations=iteration.options[i])
+  lines(baseline,col=colors[i],lwd=2)
+}
+par(mar=c(0, 0, 0, 0))
+plot.new()
+legend('center','groups',legend = iteration.options, lwd=2, lty=c(1,1,1,1,1,1,1),col=colors, ncol=3, bty ="n")
+plot(mq.trim[[1]],main = "SNIP baseline correction: influence of iterations", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]]))))
+for (i in 1:length(iteration.options)){
+  baseline <- estimateBaseline(mq.trim[[1]], method="SNIP",iterations=iteration.options[i])
+  lines(baseline,col=colors[i],lwd=2)
+}
+legend('bottomleft','groups',legend = iteration.options, lwd=2, lty=c(1,1,1,1,1,1,1),col=colors, ncol=3, bty ="o")
+
+# optimal number of iterations?
+number.of.iterations <- 10
+i <- 2
+dev.off()
+plot(mq.trim[[i]],main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[i]])), max(intensity(mq.trim[[i]]))))
+baseline <- estimateBaseline(mq.trim[[i]], method="SNIP",iterations=number.of.iterations)
+lines(baseline,col="blue",lwd=2)
+plot(mq.trim[[i]],main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[i]])), max(intensity(mq.trim[[i]]))))
+baseline <- estimateBaseline(mq.trim[[i]], method="SNIP",iterations=number.of.iterations)
+lines(baseline,col="blue",lwd=2)
+  
+# correct all spectra
+mass.spectra.baseline.corr <- removeBaseline(mq.trim, method="SNIP",iterations=number.of.iterations)
+
+# plot a spectrum to see the effect
+plot(mass.spectra.baseline.corr[[1]], main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mass.spectra.baseline.corr[[i]])), max(intensity(mass.spectra.baseline.corr[[i]]))))
+
+#plot the average of the spectra to see how it looks before I cut
+averagedSpectra <- averageMassSpectra(mass.spectra.baseline.corr)
+plot(averagedSpectra, col="indianred")
+
+## cut region 900-1100 cm-1 - unexpected peak
+#wavelengths <- mass.spectra.baseline.corr@mass
+wavelengths<-wavelengths.trim
+wavelengths_chunk1 <- wavelengths[wavelengths < 900]
+wavelengths_chunk2 <- wavelengths[wavelengths > 1100] 
+new.length <-    length(wavelengths)-length(wavelengths_chunk1)-length(wavelengths_chunk2)
+mass.spectra <- list()
+for (i in 1:length(filenames)){
+  intensity <- mass.spectra.baseline.corr[[i]]@intensity
+  intensity_chunk1 <- intensity[wavelengths < 900]
+  intensity_chunk2 <- intensity[wavelengths > 1100]
+  intensity_new <- rep(0, new.length)
+  intensity.total <-
+    append(append(intensity_chunk1,intensity_new),intensity_chunk2)
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=intensity.total)
+  metaData(mass.spectrum) <- list(name=cell.name[i])
+  mass.spectra <- c(mass.spectra,mass.spectrum) }
+
+#Visualize what I cut
+averagedSpectra_2 <- averageMassSpectra(mass.spectra)
+plot(averagedSpectra_2, add=TRUE)
+
+#I am happy with the new mass.spectra, so I substitute it for mass.spectra.baseline.corr
+mass.spectra.baseline.corr<-mass.spectra
+
+
+# NORMALISATION:
+# surface = 1
+# peak maximum normalisation is also possible
+mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
+#plot(mq.norm[[i]], main = "Normalisation", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
+plot(mq.norm[[i]], main = "Normalisation", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
+
+
+
+#### change MALDIquant (mq.norm) object in Hyperspec (hs.norm) object ####
+# get the intensity matrix from the mq.norm object
+matrix.spectra <- matrix(, nrow=  length(mq.norm), ncol = length(wavelengths.trim))
+matrix.spectra <- matrix(nrow=  length(mq.norm), ncol = length(wavelengths.trim))
+for (i in 1:length(mq.norm)){
+  matrix.spectra[i,] <- intensity(mq.norm[[i]])
+}
+
+hs.norm <- new ("hyperSpec", spc = matrix.spectra, wavelength = wavelengths.trim, labels= cell.name)
+rownames(hs.norm) = make.names(cell.name, unique=TRUE)
+#rownames(hs.norm) <- cell.name
+rownames(hs.norm@data$spc) <- cell.name
+colnames(hs.norm@data$spc) <- wavelengths.trim
+
+
+#### calculate the similarity ####
+
+## OPTION 1 
+# using the existing functions in vegan
+# research on FCM data showed that Jaccard and Bray yield similar and good results
+library(vegan)        
+diss <- vegdist(hs.norm[[]], method = 'bray')
+
+
+## OPTION 2 
+# making a customised function
+require(dplyr)
+require(NISTunits)
+## OPTION 1
+# using the existing functions in vegan
+# research on FCM data showed that Jaccard and Bray yield similar and good results
+diss <- vegdist(hs.norm[[]], method = 'bray')
+
+
+## OPTION 2
+# making a customised function
+
+SCA <- function(a, b) {
+  teller <- sum(a*b)
+  kwad1 <- sapply(a, FUN= function(x) x^2)%>%sum()
+  kwad2 <- sapply(b, FUN= function(x) x^2)%>%sum()
+  noemer <- sqrt(kwad1*kwad2)
+  cos <- teller/noemer
+  theta <- NISTradianTOdeg(acos(cos))
+  theta <- theta/90
+  return(theta)
+}
+
+# in the SCA raman the Raman@data$spc is given as matrix in the function with each row containing the cells and each column being a feature
+SCA.raman <- function(x){
+  diss <- matrix( nrow = nrow(x), ncol = nrow(x))
+  for (i in 1:nrow(x)){
+    for (j in 1:nrow(x)) {
+      diss[i,j] <- SCA(x[i,], x[j,])
+      row.names(diss) <- cell.name
+    }
+  }
+  diss <- as.dist(diss)
+  attr(diss, "method") <- "SCA.raman"
+  return(diss)
+}
+
+# Calculate the spectral contrast angle
+similarity <- SCA.raman(hs.norm@data$spc)
+
+
+# making a dendrogram based on the calculated similarity matrix
+dendrogram <- hclust(similarity, method="ward.D2")
+plot(dendrogram)
+
+#### at the given height calculate what cell is in what cluster ####
+clusters<- as.matrix(cutree(dendrogram, h= 0.5))
+
+plot(dendrogram)
+rect.hclust(dendrogram, k=max(clusters), border="red")
+
+## The tree at 0.5has 5 clusters (k)
+k <- 5
+cols <- rainbow_hcl(k)
+dend <- as.dendrogram(dendrogram)
+dend <- color_branches(dend, k = k)
+#plot(dend)
+plot(dend)
+labels_dend <- labels(dend)
+groups <- cutree(dend, k=8, order_clusters_as_data = TRUE)
+dends <- list()
+for(i in 1:k) {
+  labels_to_keep <- labels_dend[i != groups]
+  dends[[i]] <- prune(dend, labels_to_keep)
+}
+
+par(mfrow = c(2,2))
+
+for(i in 1:k) { 
+  plot(dends[[i]], 
+       main = paste0("Tree number ", i))
+}
+
+for(i in 1:k) {
+  plot(dends[[i]],
+       main = paste0("Tree number ", i))
+}
+par(mfrow = c(2,2))
+
+##Automatic cluter plot depending on groups
+
+hs.norm$clusters<- as.factor(cutree(dendrogram, k=5))
+clusters<- as.matrix(cutree(dendrogram, k=5))
+
+c1=subset(hs.norm,clusters==1)
+plot(c1)
+c2=subset(hs.norm,clusters==2)
+plot(c2)
+c3=subset(hs.norm,clusters==3)
+plot(c3)
+c4=subset(hs.norm,clusters==4)
+plot(c4)
+c5=subset(hs.norm,clusters==5)
+plot(c5)
+
+
+```
+### 6.2) Random forest: RF and VSURF
+```{r DrySpinEffect_RF, include=FALSE}
+```
+## 7) Dry on the slide effect (only) | *E coli* 2092, 28°C, 24h, 120rpm // 0h,3h,6h
+### 7.1) Spectra analysis
+```{r DryEffect, include=FALSE}
+## 3.1) DryEffect
+# *E coli* 2092, 28°C, 24h, 120rpm // 0h,3h,6h
+
+#### Basefolder and working directory ####
+basefolder = "/media/projects2/CristinaGT/RamanVariability/Spectra/Spin-DryEffect/DryEffect/"
+path= "/media/projects2/CristinaGT/RamanVariability/Spectra/Spin-DryEffect/DryEffect/"
+
+# DATA (spc files)
+filenames <- list.files(basefolder, pattern=".spc")
+spectra <- read.spc(paste0(basefolder, filenames[1]))
+wavelengths <- spectra@wavelength
+raw.data <- NULL
+for (i in 1:length(filenames)){
+  data <- read.spc(paste0(basefolder,filenames[i]))
+  raw.data <- rbind(raw.data, data@data$spc) # raw.data contains now only the intensity values
+}
+
+# hyperspec --> maldiquant
+mass.spectra <- list()
+for (i in 1:length(filenames)){
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=raw.data[i,])
+  metaData(mass.spectrum) <- list(name=filenames[i])
+  mass.spectra <- c(mass.spectra,mass.spectrum)
+}
+
+
+#### Rename spectra in R ####
+labels <- filenames
+Medium <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[2])))
+Replicate <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[3])))
+ID.spc <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[4])))
+ID <- unlist(lapply(strsplit(ID.spc,split=".spc"),function(x) (x[1])))
+
+cell.name=rep("",length(filenames))
+for (i in 1:length(filenames)) {
+  cell.name[i] <-paste(Replicate[i],collapse=NULL)
+}
+
+
+mq <- list()
+for (i in 1:length(filenames)){
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=raw.data[i,])
+  metaData(mass.spectrum) <- list(name=cell.name[i])
+  mq <- c(mq,mass.spectrum)
+}
+
+## TRIMMING
+# select the biologically relevant part of the fingerprint: 600 - 1800 cm-1 (for dueteriupm 400 - 3200 cm-1?)
+mq.trim <- trim(mq, range=c(600, 1800))
+wavelengths.trim <-  mass(mq.trim[[1]]) #333 (intervals are unequally distributed)
+
+#This chunk of code shows that the intervals between the different wavenumbers are not equal
+interval <- NULL
+name.interval <- NULL
+for (i in 1:length(wavelengths.trim)-1){
+  interval[i] <- wavelengths.trim[i+1]-wavelengths.trim[i]
+  name.interval[i] <- paste(round(wavelengths.trim[i], digits = 4),round(wavelengths.trim[i+1], digits=4), sep=" - ")
+}
+plot(interval, pch = 20, cex = 0.8, bty="l",main = "Interval between wavenumbers", ylab=expression("Size interval [cm"^-1*"]"),xlab=expression("Range wavenumbers [cm"^-1*"]"),xaxt="n")
+axis(at = c(1,332), side = 1, labels = c(name.interval[1],name.interval[322]),las = 0)
+
+
+# BASELINE CORRECTION
+# influence number of iterations?
+library(RColorBrewer)
+iteration.options <- c(5,10,20,30,40,50,100)
+colors <- brewer.pal(7, "Spectral")
+#dev.off()
+layout(rbind(1,2), heights=c(6,1))
+plot(mq.trim[[1]],main = "SNIP baseline correction: influence of iterations", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]]))))
+for (i in 1:length(iteration.options)){
+  baseline <- estimateBaseline(mq.trim[[1]], method="SNIP",iterations=iteration.options[i])
+  lines(baseline,col=colors[i],lwd=2)
+}
+par(mar=c(0, 0, 0, 0))
+plot.new()
+legend('center','groups',legend = iteration.options, lwd=2, lty=c(1,1,1,1,1,1,1),col=colors, ncol=3, bty ="n")
+plot(mq.trim[[1]],main = "SNIP baseline correction: influence of iterations", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]]))))
+for (i in 1:length(iteration.options)){
+  baseline <- estimateBaseline(mq.trim[[1]], method="SNIP",iterations=iteration.options[i])
+  lines(baseline,col=colors[i],lwd=2)
+}
+legend('bottomleft','groups',legend = iteration.options, lwd=2, lty=c(1,1,1,1,1,1,1),col=colors, ncol=3, bty ="o")
+
+# optimal number of iterations?
+number.of.iterations <- 10
+i <- 2
+dev.off()
+plot(mq.trim[[i]],main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[i]])), max(intensity(mq.trim[[i]]))))
+baseline <- estimateBaseline(mq.trim[[i]], method="SNIP",iterations=number.of.iterations)
+lines(baseline,col="blue",lwd=2)
+plot(mq.trim[[i]],main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[i]])), max(intensity(mq.trim[[i]]))))
+baseline <- estimateBaseline(mq.trim[[i]], method="SNIP",iterations=number.of.iterations)
+lines(baseline,col="blue",lwd=2)
+  
+# correct all spectra
+mass.spectra.baseline.corr <- removeBaseline(mq.trim, method="SNIP",iterations=number.of.iterations)
+
+# plot a spectrum to see the effect
+plot(mass.spectra.baseline.corr[[1]], main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mass.spectra.baseline.corr[[i]])), max(intensity(mass.spectra.baseline.corr[[i]]))))
+
+#plot the average of the spectra to see how it looks before I cut
+averagedSpectra <- averageMassSpectra(mass.spectra.baseline.corr)
+plot(averagedSpectra, col="indianred")
+
+## cut region 900-1100 cm-1 - unexpected peak
+#wavelengths <- mass.spectra.baseline.corr@mass
+wavelengths<-wavelengths.trim
+wavelengths_chunk1 <- wavelengths[wavelengths < 900]
+wavelengths_chunk2 <- wavelengths[wavelengths > 1100] 
+new.length <-    length(wavelengths)-length(wavelengths_chunk1)-length(wavelengths_chunk2)
+mass.spectra <- list()
+for (i in 1:length(filenames)){
+  intensity <- mass.spectra.baseline.corr[[i]]@intensity
+  intensity_chunk1 <- intensity[wavelengths < 900]
+  intensity_chunk2 <- intensity[wavelengths > 1100]
+  intensity_new <- rep(0, new.length)
+  intensity.total <-
+    append(append(intensity_chunk1,intensity_new),intensity_chunk2)
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=intensity.total)
+  metaData(mass.spectrum) <- list(name=cell.name[i])
+  mass.spectra <- c(mass.spectra,mass.spectrum) }
+
+#Visualize what I cut
+averagedSpectra_2 <- averageMassSpectra(mass.spectra)
+plot(averagedSpectra_2, add=TRUE)
+
+#I am happy with the new mass.spectra, so I substitute it for mass.spectra.baseline.corr
+mass.spectra.baseline.corr<-mass.spectra
+
+
+# NORMALISATION:
+# surface = 1
+# peak maximum normalisation is also possible
+mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
+#plot(mq.norm[[i]], main = "Normalisation", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
+par(mfrow=c(2,1))
+plot(mq.norm[[1]], main = "Normalisation with peak", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
+
+#### change MALDIquant (mq.norm) object in Hyperspec (hs.norm) object ####
+# get the intensity matrix from the mq.norm object
+#matrix.spectra <- matrix(, nrow=  length(mq.norm), ncol = length(wavelengths.trim))
+matrix.spectra <- matrix(nrow=  length(mq.norm), ncol = length(wavelengths))
+for (i in 1:length(mq.norm)){
+  matrix.spectra[i,] <- intensity(mq.norm[[i]])
+}
+
+hs.norm <- new ("hyperSpec", spc = matrix.spectra, wavelength = wavelengths, labels= cell.name)
+rownames(hs.norm) = make.names(cell.name, unique=TRUE)
+#rownames(hs.norm) <- cell.name
+rownames(hs.norm@data$spc) <- cell.name
+colnames(hs.norm@data$spc) <- wavelengths
+
+
+#### calculate the similarity ####
+
+## OPTION 1 
+# using the existing functions in vegan
+# research on FCM data showed that Jaccard and Bray yield similar and good results
+library(vegan)        
+diss <- vegdist(hs.norm[[]], method = 'bray')
+
+
+## OPTION 2 
+# making a customised function
+require(dplyr)
+require(NISTunits)
+## OPTION 1
+# using the existing functions in vegan
+# research on FCM data showed that Jaccard and Bray yield similar and good results
+diss <- vegdist(hs.norm[[]], method = 'bray')
+
+
+## OPTION 3
+# making a customised function
+
+SCA <- function(a, b) {
+  teller <- sum(a*b)
+  kwad1 <- sapply(a, FUN= function(x) x^2)%>%sum()
+  kwad2 <- sapply(b, FUN= function(x) x^2)%>%sum()
+  noemer <- sqrt(kwad1*kwad2)
+  cos <- teller/noemer
+  theta <- NISTradianTOdeg(acos(cos))
+  theta <- theta/90
+  return(theta)
+}
+
+# in the SCA raman the Raman@data$spc is given as matrix in the function with each row containing the cells and each column being a feature
+SCA.raman <- function(x){
+  diss <- matrix( nrow = nrow(x), ncol = nrow(x))
+  for (i in 1:nrow(x)){
+    for (j in 1:nrow(x)) {
+      diss[i,j] <- SCA(x[i,], x[j,])
+      row.names(diss) <- cell.name
+    }
+  }
+  diss <- as.dist(diss)
+  attr(diss, "method") <- "SCA.raman"
+  return(diss)
+}
+
+# Calculate the spectral contrast angle
+similarity <- SCA.raman(hs.norm@data$spc)
+
+
+# making a dendrogram based on the calculated similarity matrix
+dendrogram <- hclust(similarity, method="ward.D2")
+plot(dendrogram)
+
+#export 
+library(ape)
+#dendrogram_phylo <- as.phylo(dendrogram)
+#write.tree(dendrogram_phylo, file = "Dendrogram_LBvsNB_Raman", digits = 10)
+
+heatmap(as.matrix(similarity))
+
+#New name to export to iTOL
+# similarity.itol <- SCA.raman(hs.norm@data$spc)
+# 
+# dendrogram.itol <- hclust(similarity.itol, method="ward.D2")
+# dendrogram.itol$tip.label <- make.unique(cell.name,sep = "_")
+# library(ape)
+# dendrogram.itol <- as.phylo(dendrogram.itol)
+# write.tree(dendrogram.itol, file = "Dendrogram_Dryonslide", digits = 10)
+
+#### at the given height calculate what cell is in what cluster ####
+clusters<- as.matrix(cutree(dendrogram, h= 0.4))
+plot(dendrogram)
+rect.hclust(dendrogram, k=max(clusters), border="red")
+
+## The tree at 0.4 has 5 clusters (k)
+#The tree at 0.7 has 3 clusters (k)
+#k <- 3
+k<-5
+cols <- c("steelblue","steelblue1","steelblue4")
+dend <- as.dendrogram(dendrogram)
+dend <- color_branches(dend, k = k, col = cols)
+
+
+# Set colors and shapes code
+groupCodes<- c(rep("LB_0h", 40), rep("LB_3h", 39), rep("LB_6h",40))
+rownames(hs.norm) <- make.unique(groupCodes)
+
+colorCodes <- c(LB_0h="steelblue1",LB_3h="steelblue",LB_6h="steelblue4")
+labels_colors(dend) <- colorCodes[groupCodes][order.dendrogram(dend)]
+
+leaves_col<-colorCodes[groupCodes][order.dendrogram(dend)]
+
+shapeCodes <- c(LB_0h=8,LB_3h=17,LB_6h=13)
+leaves_pch<-shapeCodes[groupCodes][order.dendrogram(dend)]
+
+dend %>% set("leaves_pch", leaves_pch) %>%  # node point type
+  set("leaves_cex", 2) %>%  # node point size
+  set("leaves_col", leaves_col) %>% #node point color
+  #set("branches_col", k=2) %>%
+  #par(mar = rep(0,4))
+  #circlize_dendrogram(dend, labels_track_height = NA, dend_track_height = .4) 
+  plot(main = "Dry on slide", ylab="Height", leaflab="none",  type = "rectangle")
+  legend('topright',c("0h", "3h", "6h") , pch= c(8,17,13),col=c("steelblue1", "steelblue","steelblue4"))
+ 
+  
+   
+ 
+#par(mar = rep(0,4))
+# circlize_dendrogram(dend, dend_track_height = 0.8) 
+#circlize_dendrogram(dend, labels_track_height = NA, dend_track_height = .4) 
+
+
+### Plot separated trees
+
+labels_dend <- labels(dend)
+groups <- cutree(dend, k=5, order_clusters_as_data = TRUE)
+dends <- list()
+
+for(i in 1:k) {
+  labels_to_keep <- labels_dend[i != groups]
+  dends[[i]] <- prune(dend, labels_to_keep)
+}
+
+par(mfrow = c(2,2))
+
+for(i in 1:k) { 
+  plot(dends[[i]], 
+       main = paste0("Tree number ", i))
+}
+
+
+
+##Automatic cluter plot depending on groups
+
+hs.norm$clusters<- as.factor(cutree(dendrogram, k=5))
+clusters<- as.matrix(cutree(dendrogram, k=5))
+
+par(mfrow = c(2,2))
+c1=subset(hs.norm,clusters==1)
+plot(c1)
+c2=subset(hs.norm,clusters==2)
+plot(c2)
+c3=subset(hs.norm,clusters==3)
+plot(c3)
+c4=subset(hs.norm,clusters==4)
+plot(c4)
+c5=subset(hs.norm,clusters==5)
+plot(c5)
+
+### Manual cluster validation
+correct_C1<- grep("day0", rownames(c1))
+correct_C2<- grep("day0", rownames(c2))
+correct_C3<- grep("day12",rownames(c3))
+correct_C4<- grep("day12",rownames(c4))
+correct_C5<- grep("day5",rownames(c5))
+
+correct_cluster<- length(correct_C1)+length(correct_C2)+length(correct_C3)+length(correct_C4)+length(correct_C5)
+
+accuracy_cluster <- correct_cluster/length(cell.name)
+accuracy_cluster
+
+
+#### PCA ####
+# this notation gives very different and bad results but why? what does "~" mean?
+
+library('factoextra')
+labels <- groupCodes
+
+# PCA alternatuve from Jasmine
+res.PCA <- prcomp(hs.norm$.) 
+p <- fviz_pca_ind(res.PCA, label='none', habillage=labels,pointsize = 4)# addEllipses=TRUE, ellipse.level=0.95)
+p +labs(title = "PCA" ) + theme_minimal()
+p + scale_color_manual(values=c("steelblue1","steelblue","steelblue4"))+
+                       scale_shape_manual(values=c(8,17,13))
+
+plot(res.PCA)
+summary(res.PCA)  
+
+
+         
+
+         
+
+```
+### 7.2) Random forest: RF and VSURF
+```{r DryEffect_RF, include=FALSE}
+#### RF ####
+# put the intensity values in a dataframe
+df <- as.data.frame(hs.norm@data$spc, col.names=hs.norm@wavelength , check.names=TRUE)
+names(df) <- make.names(names(df)) 
+
+# make groups
+groups <- c(rep("0h", 40), rep("3h", 39), rep("6h", 40))
+
+# concatenate the column with the groups to the original data frame 
+df <- cbind(df, groups)
+
+# 75% of the sample size
+smp_size <- floor(0.75 * nrow(df))
+
+# set the seed to make your partition reproducible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(df)), size = smp_size) 
+train <- df[train_ind, ] # this set is 75% of all samples 
+test <- df[-train_ind, ] # this one is the other 25%
+
+# Random Forests package
+library(randomForest)
+
+# model training
+RF <- randomForest(groups ~. , data = train, ntree=1000,
+                   importance=TRUE) # as.factor is not required
+
+
+# number of predictors presented at each split sqrt(p) (=default)
+predictions <- predict(RF, test) 
+accuracy <- mean(predictions == test$groups) 
+accuracy
+table(test$groups, predictions)
+feature.importance <- importance(RF)
+varImpPlot(RF,type=1) # type = 1 for accuracy, 2 for Gini impurity
+#, Gini impurity is a measure of how often a randomly chosen element from the set would be incorrectly labeled if it #was randomly labeled according to the distribution of labels in the subset
+
+# all higher than x? 
+x = 10
+importance.acc <- wavelengths[feature.importance[,4] > x]
+importances.accuracy <- cbind(importance.acc,feature.importance[feature.importance[,4] > x,0])
+
+# i=(1:length(hs.norm))
+# plot(hs.norm[i])
+# mtext(expression("Wavenumber [cm"^-1*"]"), side=1, las=1, line =2.5)
+# mtext("Intensity [A.U.]", side=2, las=3, line =2.5)
+# title(expression(paste(italic("E. coli"), " average spectrum")))
+# points(importance.acc,seq(0,0,length.out=length(importance.acc)), col="red",pch = 16,cex = 1.5)
+
+hsnorm.df = as.t.df (mean_sd (hs.norm))
+points.df<-as.data.frame(importance.acc)
+colnames(points.df)<- ".wavelength"
+
+plotpeaks<- ggplot (hsnorm.df, aes (x = .wavelength)) +
+  geom_ribbon (aes (ymin = mean-sd, ymax = mean+sd),
+               fill = "#00000030") +
+  geom_line (aes (y = mean))+
+  ylim(0,0.01)+
+  labs(x= expression("Wavenumber [cm"^-1*"]"), y= "Intensity [A.U.]", title= "Drying time on slide") +   geom_vline(xintercept=points.df$.wavelength, color = "red4", size=0.5)
+
+plotpeaks + theme(title=element_text(size=20),axis.text=element_text(size=15),
+        axis.title=element_text(size=18,face="bold"))
+
+
+```
+## 8) Spin and resuspension (only) | *E coli* 2092, 28°C, 24h, 120rpm // 0h,3h,6h
+### 8.1) Spectra analysis
+```{r SpinEffect, include=FALSE}
+
+## 3.1) DryEffect
+# *E coli* 2092, 28°C, 24h, 120rpm // 0h,3h,6h
+
+#### Basefolder and working directory ####
+basefolder = "/media/projects2/CristinaGT/RamanVariability/Spectra/Spin-DryEffect/SpinEffect/"
+path= "/media/projects2/CristinaGT/RamanVariability/Spectra/Spin-DryEffect/SpinEffect/"
+
+# DATA (spc files)
+filenames <- list.files(basefolder, pattern=".spc")
+spectra <- read.spc(paste0(basefolder, filenames[1]))
+wavelengths <- spectra@wavelength
+raw.data <- NULL
+for (i in 1:length(filenames)){
+  data <- read.spc(paste0(basefolder,filenames[i]))
+  raw.data <- rbind(raw.data, data@data$spc) # raw.data contains now only the intensity values
+}
+
+# hyperspec --> maldiquant
+mass.spectra <- list()
+for (i in 1:length(filenames)){
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=raw.data[i,])
+  metaData(mass.spectrum) <- list(name=filenames[i])
+  mass.spectra <- c(mass.spectra,mass.spectrum)
+}
+
+
+#### Rename spectra in R ####
+labels <- filenames
+Spin <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[4])))
+ID.spc <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[5])))
+ID <- unlist(lapply(strsplit(ID.spc,split=".spc"),function(x) (x[1])))
+
+cell.name=rep("",length(filenames))
+for (i in 1:length(filenames)) {
+  cell.name[i] <-paste(Spin[i], ID[i],collapse=NULL)
+}
+
+
+mq <- list()
+for (i in 1:length(filenames)){
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=raw.data[i,])
+  metaData(mass.spectrum) <- list(name=cell.name[i])
+  mq <- c(mq,mass.spectrum)
+}
+## TRIMMING
+# select the biologically relevant part of the fingerprint: 600 - 1800 cm-1 (for dueteriupm 400 - 3200 cm-1?)
+mq.trim <- trim(mq, range=c(600, 1800))
+wavelengths.trim <-  mass(mq.trim[[1]]) #333 (intervals are unequally distributed)
+
+#This chunk of code shows that the intervals between the different wavenumbers are not equal
+interval <- NULL
+name.interval <- NULL
+for (i in 1:length(wavelengths.trim)-1){
+  interval[i] <- wavelengths.trim[i+1]-wavelengths.trim[i]
+  name.interval[i] <- paste(round(wavelengths.trim[i], digits = 4),round(wavelengths.trim[i+1], digits=4), sep=" - ")
+}
+plot(interval, pch = 20, cex = 0.8, bty="l",main = "Interval between wavenumbers", ylab=expression("Size interval [cm"^-1*"]"),xlab=expression("Range wavenumbers [cm"^-1*"]"),xaxt="n")
+axis(at = c(1,332), side = 1, labels = c(name.interval[1],name.interval[322]),las = 0)
+
+
+# BASELINE CORRECTION
+# influence number of iterations?
+library(RColorBrewer)
+iteration.options <- c(5,10,20,30,40,50,100)
+colors <- brewer.pal(7, "Spectral")
+#dev.off()
+layout(rbind(1,2), heights=c(6,1))
+plot(mq.trim[[1]],main = "SNIP baseline correction: influence of iterations", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]]))))
+for (i in 1:length(iteration.options)){
+  baseline <- estimateBaseline(mq.trim[[1]], method="SNIP",iterations=iteration.options[i])
+  lines(baseline,col=colors[i],lwd=2)
+}
+par(mar=c(0, 0, 0, 0))
+plot.new()
+legend('center','groups',legend = iteration.options, lwd=2, lty=c(1,1,1,1,1,1,1),col=colors, ncol=3, bty ="n")
+plot(mq.trim[[1]],main = "SNIP baseline correction: influence of iterations", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]]))))
+for (i in 1:length(iteration.options)){
+  baseline <- estimateBaseline(mq.trim[[1]], method="SNIP",iterations=iteration.options[i])
+  lines(baseline,col=colors[i],lwd=2)
+}
+legend('bottomleft','groups',legend = iteration.options, lwd=2, lty=c(1,1,1,1,1,1,1),col=colors, ncol=3, bty ="o")
+
+# optimal number of iterations?
+number.of.iterations <- 10
+i <- 2
+dev.off()
+plot(mq.trim[[i]],main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[i]])), max(intensity(mq.trim[[i]]))))
+baseline <- estimateBaseline(mq.trim[[i]], method="SNIP",iterations=number.of.iterations)
+lines(baseline,col="blue",lwd=2)
+plot(mq.trim[[i]],main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",ylim=c(min(intensity(mq.trim[[i]])), max(intensity(mq.trim[[i]]))))
+baseline <- estimateBaseline(mq.trim[[i]], method="SNIP",iterations=number.of.iterations)
+lines(baseline,col="blue",lwd=2)
+  
+# correct all spectra
+mass.spectra.baseline.corr <- removeBaseline(mq.trim, method="SNIP",iterations=number.of.iterations)
+
+# plot a spectrum to see the effect
+plot(mass.spectra.baseline.corr[[1]], main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mass.spectra.baseline.corr[[i]])), max(intensity(mass.spectra.baseline.corr[[i]]))))
+
+#plot the average of the spectra to see how it looks before I cut
+averagedSpectra <- averageMassSpectra(mass.spectra.baseline.corr)
+plot(averagedSpectra, col="indianred")
+
+## cut region 900-1100 cm-1 - unexpected peak
+#wavelengths <- mass.spectra.baseline.corr@mass
+wavelengths<-wavelengths.trim
+wavelengths_chunk1 <- wavelengths[wavelengths < 900]
+wavelengths_chunk2 <- wavelengths[wavelengths > 1100] 
+new.length <-    length(wavelengths)-length(wavelengths_chunk1)-length(wavelengths_chunk2)
+mass.spectra <- list()
+for (i in 1:length(filenames)){
+  intensity <- mass.spectra.baseline.corr[[i]]@intensity
+  intensity_chunk1 <- intensity[wavelengths < 900]
+  intensity_chunk2 <- intensity[wavelengths > 1100]
+  intensity_new <- rep(0, new.length)
+  intensity.total <-
+    append(append(intensity_chunk1,intensity_new),intensity_chunk2)
+  mass.spectrum <- createMassSpectrum(mass=wavelengths,
+                                      intensity=intensity.total)
+  metaData(mass.spectrum) <- list(name=cell.name[i])
+  mass.spectra <- c(mass.spectra,mass.spectrum) }
+
+#Visualize what I cut
+averagedSpectra_2 <- averageMassSpectra(mass.spectra)
+plot(averagedSpectra_2, add=TRUE)
+
+#I am happy with the new mass.spectra, so I substitute it for mass.spectra.baseline.corr
+mass.spectra.baseline.corr<-mass.spectra
+
+# NORMALISATION:
+# surface = 1
+# peak maximum normalisation is also possible
+mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
+#plot(mq.norm[[i]], main = "Normalisation", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
+par(mfrow=c(2,1))
+plot(mq.norm[[1]], main = "Normalisation with peak", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
+
+#### change MALDIquant (mq.norm) object in Hyperspec (hs.norm) object ####
+# get the intensity matrix from the mq.norm object
+#matrix.spectra <- matrix(, nrow=  length(mq.norm), ncol = length(wavelengths.trim))
+matrix.spectra <- matrix(nrow=  length(mq.norm), ncol = length(wavelengths))
+for (i in 1:length(mq.norm)){
+  matrix.spectra[i,] <- intensity(mq.norm[[i]])
+}
+
+hs.norm <- new ("hyperSpec", spc = matrix.spectra, wavelength = wavelengths, labels= cell.name)
+rownames(hs.norm) = make.names(cell.name, unique=TRUE)
+#rownames(hs.norm) <- cell.name
+rownames(hs.norm@data$spc) <- cell.name
+colnames(hs.norm@data$spc) <- wavelengths
+
+
+#### calculate the similarity ####
+
+## OPTION 1 
+# using the existing functions in vegan
+# research on FCM data showed that Jaccard and Bray yield similar and good results
+library(vegan)        
+diss <- vegdist(hs.norm[[]], method = 'bray')
+
+
+## OPTION 2 
+# making a customised function
+require(dplyr)
+require(NISTunits)
+## OPTION 1
+# using the existing functions in vegan
+# research on FCM data showed that Jaccard and Bray yield similar and good results
+diss <- vegdist(hs.norm[[]], method = 'bray')
+
+
+## OPTION 3
+# making a customised function
+
+SCA <- function(a, b) {
+  teller <- sum(a*b)
+  kwad1 <- sapply(a, FUN= function(x) x^2)%>%sum()
+  kwad2 <- sapply(b, FUN= function(x) x^2)%>%sum()
+  noemer <- sqrt(kwad1*kwad2)
+  cos <- teller/noemer
+  theta <- NISTradianTOdeg(acos(cos))
+  theta <- theta/90
+  return(theta)
+}
+
+# in the SCA raman the Raman@data$spc is given as matrix in the function with each row containing the cells and each column being a feature
+SCA.raman <- function(x){
+  diss <- matrix( nrow = nrow(x), ncol = nrow(x))
+  for (i in 1:nrow(x)){
+    for (j in 1:nrow(x)) {
+      diss[i,j] <- SCA(x[i,], x[j,])
+      row.names(diss) <- cell.name
+    }
+  }
+  diss <- as.dist(diss)
+  attr(diss, "method") <- "SCA.raman"
+  return(diss)
+}
+
+# Calculate the spectral contrast angle
+similarity <- SCA.raman(hs.norm@data$spc)
+
+
+# making a dendrogram based on the calculated similarity matrix
+dendrogram <- hclust(similarity, method="ward.D2")
+plot(dendrogram)
+
+#Export to iTOL
+# library(ape)
+# dendrogram <- as.phylo(dendrogram)
+# write.tree(dendrogram, file = "Dendrogram_Spineffect", digits = 10)
+# 
+
+#### at the given height calculate what cell is in what cluster ####
+clusters<- as.matrix(cutree(dendrogram, h= 0.4))
+plot(dendrogram)
+rect.hclust(dendrogram, k=max(clusters), border="red")
+
+
+## The tree at 0.75 has 3 clusters (k)
+## The tree at 0.4 has 5 clusters (k)
+k <- 3
+#k <- 5
+cols <- c("steelblue","steelblue1","steelblue4")
+dend <- as.dendrogram(dendrogram)
+dend <- color_branches(dend, k = k, col = cols)
+
+
+# Set colors and shapes code
+groupCodes<- c(rep("LB_0h", 40), rep("LB_3h", 39), rep("LB_6h",40))
+#rownames(hs.norm) <- make.unique(groupCodes)
+
+colorCodes <- c(LB_0h="steelblue1",LB_3h="steelblue",LB_6h="steelblue4")
+labels_colors(dend) <- colorCodes[groupCodes][order.dendrogram(dend)]
+
+leaves_col<-colorCodes[groupCodes][order.dendrogram(dend)]
+
+shapeCodes <- c(LB_0h=8,LB_3h=17,LB_6h=13)
+leaves_pch<-shapeCodes[groupCodes][order.dendrogram(dend)]
+
+dend %>% set("leaves_pch", leaves_pch) %>%  # node point type
+  set("leaves_cex", 2) %>%  # node point size
+  set("leaves_col", leaves_col) %>% #node point color
+  #set("branches_col", k=2) %>%
+  #par(mar = rep(0,4))
+  #circlize_dendrogram(dend, labels_track_height = NA, dend_track_height = .4) 
+  plot(main = "Dry on slide", ylab="Height", leaflab="none",  type = "rectangle")
+  legend('topright',c("0h", "3h", "6h") , pch= c(8,17,13),col=c("steelblue1", "steelblue","steelblue4"))
+ 
+  
+   
+ 
+#par(mar = rep(0,4))
+# circlize_dendrogram(dend, dend_track_height = 0.8) 
+#circlize_dendrogram(dend, labels_track_height = NA, dend_track_height = .4) 
+
+
+### Plot separated trees
+
+labels_dend <- labels(dend)
+groups <- cutree(dend, k=8, order_clusters_as_data = TRUE)
+dends <- list()
+
+for(i in 1:k) {
+  labels_to_keep <- labels_dend[i != groups]
+  dends[[i]] <- prune(dend, labels_to_keep)
+}
+
+par(mfrow = c(2,2))
+
+for(i in 1:k) { 
+  plot(dends[[i]], 
+       main = paste0("Tree number ", i))
+}
+
+
+
+##Automatic cluter plot depending on groups
+
+hs.norm$clusters<- as.factor(cutree(dendrogram, k=5))
+clusters<- as.matrix(cutree(dendrogram, k=5))
+
+par(mfrow = c(2,2))
+c1=subset(hs.norm,clusters==1)
+plot(c1)
+c2=subset(hs.norm,clusters==2)
+plot(c2)
+c3=subset(hs.norm,clusters==3)
+plot(c3)
+c4=subset(hs.norm,clusters==4)
+plot(c4)
+c5=subset(hs.norm,clusters==5)
+plot(c5)
+
+### Manual cluster validation
+correct_C1<- grep("day0", rownames(c1))
+correct_C2<- grep("day0", rownames(c2))
+correct_C3<- grep("day12",rownames(c3))
+correct_C4<- grep("day12",rownames(c4))
+correct_C5<- grep("day5",rownames(c5))
+
+correct_cluster<- length(correct_C1)+length(correct_C2)+length(correct_C3)+length(correct_C4)+length(correct_C5)
+
+accuracy_cluster <- correct_cluster/length(cell.name)
+accuracy_cluster
+
+#### PCA ####
+# this notation gives very different and bad results but why? what does "~" mean?
+
+library('factoextra')
+labels <- groupCodes
+
+# PCA alternatuve from Jasmine
+res.PCA <- prcomp(hs.norm$.) 
+p <- fviz_pca_ind(res.PCA, label='none', habillage=labels,pointsize = 4)# addEllipses=TRUE, ellipse.level=0.95)
+p +labs(title = "PCA" ) + theme_minimal()
+p + scale_color_manual(values=c("steelblue1","steelblue","steelblue4"))+
+                       scale_shape_manual(values=c(8,17,13))
+
+plot(res.PCA)
+summary(res.PCA)  
+
+
+         
+
+         
+
+```
+### 8.2) Random forest: RF and VSURF
+```{r SpinEffect_RF, include=FALSE}
+#### RF ####
+# put the intensity values in a dataframe
+df <- as.data.frame(hs.norm@data$spc, col.names=hs.norm@wavelength , check.names=TRUE)
+names(df) <- make.names(names(df)) 
+
+# make groups
+groups <- c(rep("1spin", 40), rep("6spin", 40))
+
+# concatenate the column with the groups to the original data frame 
+df <- cbind(df, groups)
+
+# 75% of the sample size
+smp_size <- floor(0.75 * nrow(df))
+
+# set the seed to make your partition reproducible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(df)), size = smp_size) 
+train <- df[train_ind, ] # this set is 75% of all samples 
+test <- df[-train_ind, ] # this one is the other 25%
+
+# Random Forests package
+library(randomForest)
+
+# model training
+as.factor(groups)
+RF <- randomForest(groups~. , data = train, ntree=1000,
+                   importance=TRUE) # as.factor is not required
+
+
+# number of predictors presented at each split sqrt(p) (=default)
+predictions <- predict(RF, test) 
+accuracy <- mean(predictions == test$groups) 
+accuracy
+table(test$groups, predictions)
+feature.importance <- importance(RF)
+varImpPlot(RF,type=1) # type = 1 for accuracy, 2 for Gini impurity
+#, Gini impurity is a measure of how often a randomly chosen element from the set would be incorrectly labeled if it #was randomly labeled according to the distribution of labels in the subset
+
+# all higher than x? 
+x = 1
+importance.acc <- wavelengths[feature.importance[,4] > x]
+importances.accuracy <- cbind(importance.acc,feature.importance[feature.importance[,4] > x,0])
+
+# i=(1:length(hs.norm))
+# plot(hs.norm[i])
+# mtext(expression("Wavenumber [cm"^-1*"]"), side=1, las=1, line =2.5)
+# mtext("Intensity [A.U.]", side=2, las=3, line =2.5)
+# title(expression(paste(italic("E. coli"), " average spectrum")))
+# points(importance.acc,seq(0,0,length.out=length(importance.acc)), col="red",pch = 16,cex = 1.5)
+hsnorm.df = as.t.df (mean_sd (hs.norm))
+points.df<-as.data.frame(importance.acc)
+colnames(points.df)<- ".wavelength"
+
+plotpeaks<- ggplot (hsnorm.df, aes (x = .wavelength)) +
+  geom_ribbon (aes (ymin = mean-sd, ymax = mean+sd),
+               fill = "#00000030") +
+  geom_line (aes (y = mean))+
+  ylim(0,0.01)+
+  labs(x= expression("Wavenumber [cm"^-1*"]"), y= "Intensity [A.U.]", title= "Extra manipulations") +   geom_vline(xintercept=points.df$.wavelength, color = "red4", size=0.5)
+
+plotpeaks + theme(title=element_text(size=20),axis.text=element_text(size=15),
+        axis.title=element_text(size=18,face="bold"))
+
+```
+
+# See the peak at ~1000 cm-1
+This is a peak that shows up sometimes. Seen by me and Jasmine, also in control samples. We dont know where it is coming from and think it is Random. This is a piece of code to visualize it.
+```{r Wavalenght_peak at 1000cm-1, include=FALSE}
+
+basefolder = "/media/projects2/CristinaGT/RamanVariability/Spectra/Spin-DryEffect/SpinEffect/NormalizationTest/"
+path= "/media/projects2/CristinaGT/RamanVariability/Spectra/Spin-DryEffect/SpinEffect/NormalizationTest/"
+
+# DATA (spc files)
+filenames <- list.files(basefolder, pattern=".spc")
+spectra <- read.spc(paste0(basefolder, filenames[1]))
+wavelengths <- spectra@wavelength
+raw.data <- NULL
+for (i in 1:length(filenames)){
+  data <- read.spc(paste0(basefolder,filenames[i]))
+  raw.data <- rbind(raw.data, data@data$spc) # raw.data contains now only the intensity values
+}
+
+plotspc(spectra, col="indianred")
+
+plotspc(spectra2, add=TRUE)
+```

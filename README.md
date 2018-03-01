@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/CMET-UGent/MicroRaman.svg?branch=master)](https://travis-ci.org/CMET-UGent/MicroRaman)
+
 # MicroRaman
 *******************
 - **Authors**: Frederiek-Maarten Kerchkof [FrederiekMaarten.Kerckhof@UGent.be], Benjamin Buysschaert [Benjamin.Buysschaert@Ugent.be], Dmitry Khalenkow [Dmitry.Khalenkow@Ugent.be] and Cristina Garcia Timermans [Cristina.GarciaTimermans@ugent.be]

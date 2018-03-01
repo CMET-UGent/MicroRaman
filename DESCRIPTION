@@ -6,7 +6,6 @@ Authors@R: c(person("Frederiek-Maarten", "Kerckhof", email = "FrederiekMaarten.K
 Maintainer: Frederiek-Maarten kerckhof <frederiekmaarten.kerckhof@ugent.be>
 Description: Set of functions to pre-process and phenotype microbial Raman spectroscopy data.
 Remotes:
-    local::/pkgs/unmixR
     github::zmzhang/baselinewavelet
     bioc::release/baseline
 Suggests: phyloseq,

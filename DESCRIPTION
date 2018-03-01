@@ -5,9 +5,7 @@ Version: 0.1.0
 Authors@R: c(person("Frederiek-Maarten", "Kerckhof", email = "FrederiekMaarten.Kerckhof@UGent.be", role = c("aut", "cre")),person("Benjamin", "Buysschaert", email = "Benjamin.Buysschaert@UGent.be", role = "ctb"))
 Maintainer: Frederiek-Maarten kerckhof <frederiekmaarten.kerckhof@ugent.be>
 Description: Set of functions to pre-process and phenotype microbial Raman spectroscopy data.
-Remotes:
-    github::zmzhang/baselinewavelet
-    bioc::release/baseline
+Remotes: github::zmzhang/baselinewavelet
 Suggests: phyloseq,
     knitr,
     rmarkdown

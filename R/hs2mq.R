@@ -3,6 +3,8 @@
 #' This function converts a hyperSpec::hyperSpec objects (default of Raman spectra) to a
 #' MALDIquant::MassSpectrum object for downstream processing.
 #' @param x hyperSpec object
+#' @importFrom MALDIquant createMassSpectrum
+#' @examples
 #' ## Short example
 #'
 #' # Load hyperSpec object

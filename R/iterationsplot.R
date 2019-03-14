@@ -8,7 +8,11 @@
 #' @param plotlegend a boolean indicating wether or not to include a legend in lower left corner
 #'     (defaults to TRUE)
 #' @param ... additional parameters passed on to plot or lines
-#'
+#' @importFrom RColorBrewer brewer.pal
+#' @importFrom hyperSpec plot
+#' @importFrom MALDIquant intensity estimateBaseline
+#' @importFrom graphics lines legend
+#' @examples
 #' ## Short example
 #'
 #' # Load hyperSpec object
@@ -56,6 +60,7 @@ iterationsplot <- function(mdq,itervect,plotlegend=TRUE,...){
   }
   if(plotlegend){
     legend("bottomleft",
+           title="Number of iterations",
            legend = itervect, lwd=2,
            lty=c(1,1,1,1,1,1,1),
            col=colors, ncol=3, bty ="o")

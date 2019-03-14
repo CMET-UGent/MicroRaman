@@ -14,8 +14,13 @@ iterationsplot(mdq, itervect, plotlegend = TRUE, ...)
 \item{plotlegend}{a boolean indicating wether or not to include a legend in lower left corner
 (defaults to TRUE)}
 
-\item{...}{additional parameters passed on to plot or lines
-
+\item{...}{additional parameters passed on to plot or lines}
+}
+\description{
+This function plots baseline correction for several iterations on the
+spectral data to determine the optimal number of iterations
+}
+\examples{
 ## Short example
 
 # Load hyperSpec object
@@ -29,9 +34,5 @@ iterationsplot(mdq=selms,itervect=iteration.options)
 # if you want to check for all
 # pdf("iterationplots.pdf")
 # lapply(mdqs,iterationsplot,iteration.options)
-# dev.off()}
-}
-\description{
-This function plots baseline correction for several iterations on the
-spectral data to determine the optimal number of iterations
+# dev.off()
 }

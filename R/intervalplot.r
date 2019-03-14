@@ -3,15 +3,14 @@
 #' This function plots the intervals between wavelengths to assess whether
 #' or not they were constant.
 #' @param trimmedwl a numeric vector of wavelengths (trimmed to the biological relevant part)
-#' ## Short example
-#'
-#' # Load hyperSpec object
+#' @importFrom graphics plot axis
+#' @examples
 #' data("mdqs")
 #'
 #' # Extract wavelengths and plot
 #' mdqs.trim <- trim(mdqs, range=c(600, 1800))
-#' wavelengths.trim <-  mass(mq.trim[[1]])
-#' plot.interval(trimmedwl=wavelengths.trim)
+#' wavelengths.trim <-  mass(mdqs.trim[[1]])
+#' intervalplot(trimmedwl=wavelengths.trim)
 #' @export
 intervalplot <- function(trimmedwl){
   interval <- vector()

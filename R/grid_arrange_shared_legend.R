@@ -4,6 +4,9 @@
 #' @param ncol number of columns in the grid (defaults to the number of plots)
 #' @param nrow number of rows in the grid (defaults to 1)
 #' @param position character vector (of length 2) defining the position of the legend. Defaults to bottom and right.
+#' @importFrom ggplot2 ggplotGrob theme
+#' @importFrom gridExtra arrangeGrob
+#' @importFrom grid unit.c unit grid.newpage grid.draw
 #' @export
 
 grid_arrange_shared_legend <- function(..., ncol = length(list(...)), nrow = 1, position = c("bottom", "right")) {

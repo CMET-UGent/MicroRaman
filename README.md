@@ -2,16 +2,18 @@
 
 # MicroRaman
 *******************
-- **Authors**: Frederiek-Maarten Kerchkof [FrederiekMaarten.Kerckhof@UGent.be], Benjamin Buysschaert [Benjamin.Buysschaert@Ugent.be], Dmitry Khalenkow [Dmitry.Khalenkow@Ugent.be] and Cristina Garcia Timermans [Cristina.GarciaTimermans@ugent.be]
+- **Authors**: [Frederiek-Maarten Kerchkof](mailto:FrederiekMaarten.Kerckhof@UGent.be), [Benjamin Buysschaert](mailto:Benjamin.Buysschaert@Ugent.be), [Dmitry Khalenkow](mailto:Dmitry.Khalenkow@Ugent.be), [Jasmine Heyse](mailto:Jasmine.Heyse@ugent.be), [Ruben Props](mailto:Ruben.Props@ugent.be) and [Cristina Garcia Timermans](mailto:Cristina.GarciaTimermans@ugent.be).
 
-The goal of this package is to provide a standardized automated workflow for spectral analysis in a fast and objective way, removing the post-processing bias of different operators. 
+The goal of this package is to provide a standardized and automated workflow for spectral analysis in a fast and objective way, removing the post-processing bias of different operators. 
 
+If you use this package, please consider citing the original publication:  
 
+García-Timermans, C., Rubbens, P., Kerckhof, F. M., Buysschaert, B., Khalenkow, D., Waegeman, W., Skirtach, A. G. & Boon, N. (2018). Label-free Raman characterization of bacteria calls for standardized procedures. Journal of microbiological methods, 151, 69-75.
 
 Install the package:
 ```R
 library("devtools")
-install_github("CMET-UGent/MicroRaman")
+install_github("CMET-UGent/MicroRaman_package")
 ```
 
 ## Available functions
@@ -19,9 +21,8 @@ install_github("CMET-UGent/MicroRaman")
 Functions  | Actions
 ------------| -----------
 hs2mq | converts a `hyperSpec::hyperSpec` object directly to a `MALDIquant::MassSpectrum` object
-hyperSpec2MALDI | converts the extracted information from  `hyperSpec::hyperSpec` object  to a `MALDIquant::MassSpectrum` object
 intervalplot | plotting function that shows if (trimmed) wavelengths are evenly spaced
-
+grid_arrange_shared_legend | Function for creating a common legend for 2 ggplot2 figures.
 
 ## Avaiable datasets
 
@@ -34,9 +35,5 @@ data("<name of dataset>")
 
 Dataset name | Data contents
 -------------| ----------------
-cell.names   | simple list of filenames of spectra of E. coli LMG 2092 in triplicate in NB and LB
-hs           | a hyperSpec object (empty) with our Raman wavelengths
-hyperspecobj | a hyperSpec object (empty) with our Raman wavelengths
-LMG2092_Reproducibility | large matrix with raw data extracted from the . coli LMG 2092 in triplicate in NB and LB test.
-mdqs | a list of `MALDIquant::MassSpectrum` objects of single-cell data of Escherichia coli LMG2092 biological replicates (see Vignettes)
-raw.data | large matrix with raw data extracted from the . coli LMG 2092 in triplicate in NB and LB test.
+spx.all | Hyperspec dataset (list of hyperSpec class objects) from single-cell data of *E. coli* LMG 2092 in triplicate in NB and LB test.
+

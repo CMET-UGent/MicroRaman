@@ -1,7 +1,7 @@
 Package: MicroRaman
 Type: Package
 Title: Phenotyping of microbial Raman data
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(person("Frederiek-Maarten", "Kerckhof", email = "FrederiekMaarten.Kerckhof@UGent.be", role = c("aut", "cre")),
              person("Benjamin", "Buysschaert", email = "Benjamin.Buysschaert@UGent.be", role = "ctb"),
              person("Ruben", "Props", email = "Ruben.Props@UGent.be", role = "aut"),
@@ -9,12 +9,12 @@ Authors@R: c(person("Frederiek-Maarten", "Kerckhof", email = "FrederiekMaarten.K
              person("Dmitry", "Khalenkow", email = "Dmitry.Khalenkow@Ugent.be", role = "ctb"))
 Maintainer: Frederiek-Maarten kerckhof <frederiekmaarten.kerckhof@ugent.be>
 Description: Set of functions to pre-process and phenotype microbial Raman spectroscopy data.
-Remotes: github::zmzhang/baselinewavelet
+Remotes: github::zmzhang/baselinewavelet, github::rprops/Phenoflow_package
 Suggests: phyloseq,
     knitr,
     rmarkdown
 Depends:
-    R (>= 3.4.0), hyperSpec, baseline, plotrix, MALDIquant
+    R (>= 3.5.0), hyperSpec, baseline, plotrix, MALDIquant
 Imports:
     hyperSpec,
     baseline,
@@ -32,10 +32,21 @@ Imports:
     ggplot2,
     NISTunits,
     vegan,
-    dplyr
+    dplyr,
+    gridExtra,
+    tidyr,
+    fpc,
+    tsne,
+    egg,
+    sandwich,
+    cluster,
+    grid,
+    reshape2,
+    caret,
+    flowAI
 biocViews: CellBasedAssays, Raman Spectroscopy, Infrastructure, Software, Clustering
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
 VignetteBuilder: knitr
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1

@@ -131,11 +131,13 @@ mass.spectra.baseline.corr <- removeBaseline(mdqs.trim,
                                              iterations=number.of.iterations)
 
 # plot a spectrum to see the effect
-plot(mass.spectra.baseline.corr[[1]], main = "SNIP baseline correction", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mass.spectra.baseline.corr[[i]])), max(intensity(mass.spectra.baseline.corr[[i]]))))
+baselinecorrplot(mass.spectra.baseline.corr,mdqs.trim,i=2,addorig=TRUE)
+baselinecorrplot(mass.spectra.baseline.corr,mdqs.trim,i=2,addorig=FALSE)
 
-#plot the average of the spectra to see how it looks before I cut
+#plot the average of the spectra to see how it looks before cutting
 averagedSpectra <- averageMassSpectra(mass.spectra.baseline.corr)
-plot(averagedSpectra, col="indianred")
+plot(averagedSpectra, col="indianred",main="Averaged spectrum",
+     xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)")
 
 ## cut region 900-1100 cm-1 - unexpected peak
 #wavelengths <- mass.spectra.baseline.corr@mass

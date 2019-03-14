@@ -44,10 +44,11 @@ E. coli LMG 2092 | 1 | CGT | LB, 28°C 120rmp
 
   
 # Procedure
-For each dataset, we will look at the spectra, preprocess. We then will cut the peak at $\sim 1000~\text{cm}^{-1}$ (suspicious). Next, we will make dendrograms and cut at a height that will allow us to see the plots well. Then we will plot the spectra of each cluster.
+
+For each dataset, we will look at the spectra, and preprocess them. We then will cut the peak at $\sim 1000~\text{cm}^{-1}$ (suspicious). Next, we will make dendrograms and cut at a height that will allow us to see the plots well. Then we will plot the spectra for each cluster.
 Finally, we will use random forests (RF) to select the most relevant peaks for classification. We will also use the algorithm VSURF. Here, we will use the code from `RandomForest_RamanVariability`.
 
-## Check triplicates in LB and NB
+## Check triplicates in LB and NB (reproducibility)
 
 *E. coli* LMG 2092, 28°C, 24h, 120rpm
 
@@ -64,7 +65,7 @@ data("spx.all")
 mdqs <- lapply(spx.all,hs2mq)
 
 #### Rename spectra in R ####
-# Normally, you can directly use the filenames object of you create your own
+# Normally, you can directly use the filenames object if you create your own
 # dataset:
 # labels <- filenames
 # however, in case of the test-dataset we need to extract the filenames first
@@ -75,8 +76,12 @@ Replicate <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[3])))
 ID.spc <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[4])))
 ID <- unlist(lapply(strsplit(ID.spc,split=".spc"),function(x) (x[1])))
 
+# create a vector with a name for every cell, in this case metadata created by
+# concatenating the medium that was used and which biological replicate 
+# the cell belonged to (i.e. the name of the sample the cell belongs to)
 cnvect <- paste(Medium,Replicate)
 
+# assign this information to the MALDIquant object
 mdqs.rn <- lapply(seq_along(cnvect),
                     function(x){
                       mass.spectrum <- mdqs[[x]]
@@ -85,21 +90,27 @@ mdqs.rn <- lapply(seq_along(cnvect),
                     }
                    )
 ```
+
 ### TRIMMING
-Select the biologically relevant part of the fingerprint: $600 - 1800~\text{cm}^{-1}$ (for dueterium $400 - 3200~\text{cm}^{-1}$?)
+
+Select the biologically relevant part of the fingerprint: 
+$600 - 1800~\text{cm}^{-1}$ (for dueterium $400 - 3200~\text{cm}^{-1}$?)
 
 ```{r trimming, fig.width=7,fig.height=5}
 mdqs.trim <- trim(mdqs.rn, range=c(600, 1800))
-wavelengths.trim <-  mass(mdqs.trim[[1]]) #333 (intervals are unequally distributed)
+wavelengths.trim <-  mass(mdqs.trim[[1]]) 
+# 332 masses (intervals are unequally distributed)
 
-#This plot shows that the intervals between the different wavenumbers are not equal
+# This plot shows that the intervals between the different 
+# wavenumbers are not equal
 intervalplot(wavelengths.trim)
 
 ```
 
 ### BASELINE CORRECTION
+
 First we look what the impact of setting the `iterations` argument to the `SNIP`
-method in `MALDIquant::estimateBaseline`.
+method (Statistics-sensitive Non-linear Iterative Peak-clipping algorithm) in `MALDIquant::estimateBaseline`. For more information, see: `?MALDIquant::estimateBaseline`
 
 ```{r blciter, fig.width=7,fig.height=5, fig.cap=c("Baseline correction for different iterations of the first sample","Baseline correction for the optimal number iterations plotted with the second sample")} 
 iteration.options <- c(5,10,20,30,40,50,100)
@@ -111,7 +122,7 @@ i <- 2 #change this to look at other spectra
 iterationsplot(mdqs.trim[[i]],number.of.iterations)
 ```
 
-Next, we actually correct the spectra and inspect the result
+Next, we actually correct the spectra and inspect the result.
 
 ```{r blc, include=FALSE, eval=FALSE} 
 # correct all spectra

@@ -4,12 +4,16 @@
 \alias{iterationsplot}
 \title{Plot the effect of iterations on baseline correction}
 \usage{
-iterationsplot(mdq, itervect, plotlegend = TRUE, ...)
+iterationsplot(mdq, itervect, method = "SNIP", plotlegend = TRUE, ...)
 }
 \arguments{
 \item{mdq}{a MALDIquant::MassSpectrum (trimmed to relevant wavelengths)}
 
 \item{itervect}{a numeric vector of different iteration options (max. 11 values)}
+
+\item{method}{one of "SNIP", "TopHat", "ConvexHull" or "median" for baseline
+estimation by MALDIquant::estimateBaseline (see ?MALDIquant::estimateBaseline).
+defaults to "SNIP".}
 
 \item{plotlegend}{a boolean indicating wether or not to include a legend in lower left corner
 (defaults to TRUE)}

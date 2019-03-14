@@ -7,6 +7,9 @@
 #' @param itervect a numeric vector of different iteration options (max. 11 values)
 #' @param plotlegend a boolean indicating wether or not to include a legend in lower left corner
 #'     (defaults to TRUE)
+#' @param method one of "SNIP", "TopHat", "ConvexHull" or "median" for baseline
+#'     estimation by MALDIquant::estimateBaseline (see ?MALDIquant::estimateBaseline).
+#'     defaults to "SNIP".
 #' @param ... additional parameters passed on to plot or lines
 #' @importFrom RColorBrewer brewer.pal
 #' @importFrom hyperSpec plot
@@ -30,7 +33,8 @@
 #' @export
 
 
-iterationsplot <- function(mdq,itervect,plotlegend=TRUE,...){
+iterationsplot <- function(mdq,itervect,method="SNIP",plotlegend=TRUE,...){
+  method <- match.arg(method,c("SNIP", "TopHat", "ConvexHull","median"))
   ncol <- length(itervect)
   if(ncol>11){
     stop("Currently the maximum number of different iteration options is 11.
@@ -52,11 +56,11 @@ iterationsplot <- function(mdq,itervect,plotlegend=TRUE,...){
        main = paste0("SNIP baseline correction: influence of iterations for ",
                      smpnm),
        xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)",
-       ylim=c(min(intensity(mdq)), max(intensity(mdq))))
+       ylim=c(min(intensity(mdq)), max(intensity(mdq))),...)
   for (i in 1:length(itervect)){
-    baseline <- estimateBaseline(mdq, method="SNIP",
+    baseline <- estimateBaseline(mdq, method=method,
                                  iterations=itervect[i])
-    lines(baseline,col=colors[i],lwd=2)
+    lines(baseline,col=colors[i],lwd=2,...)
   }
   if(plotlegend){
     legend("bottomleft",

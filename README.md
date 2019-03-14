@@ -23,6 +23,7 @@ Functions  | Actions
 hs2mq | converts a `hyperSpec::hyperSpec` object directly to a `MALDIquant::MassSpectrum` object
 intervalplot | plotting function that shows if (trimmed) wavelengths are evenly spaced
 grid_arrange_shared_legend | Function for creating a common legend for 2 ggplot2 figures.
+iterationsplot | plots baseline correction for several iterations on the spectral data to determine the optimal number of iterations
 
 ## Avaiable datasets
 

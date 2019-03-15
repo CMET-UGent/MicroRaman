@@ -136,30 +136,13 @@ baselinecorrplot(mass.spectra.baseline.corr,mdqs.trim,i=2,addorig=FALSE)
 
 #plot the average of the spectra to see how it looks before cutting
 averagedSpectra <- averageMassSpectra(mass.spectra.baseline.corr)
-plot(averagedSpectra, col="indianred",main="Averaged spectrum",
-     xlab=expression("Wavenumber (cm"^-1*")"), ylab="Intensity (AU)")
+ramplot(averagedSpectra, col="indianred",main="Averaged spectrum")
 
 ## cut region 900-1100 cm-1 - unexpected peak
-#wavelengths <- mass.spectra.baseline.corr@mass
-wavelengths<-wavelengths.trim
-wavelengths_chunk1 <- wavelengths[wavelengths < 900]
-wavelengths_chunk2 <- wavelengths[wavelengths > 1100] 
-new.length <-    length(wavelengths)-length(wavelengths_chunk1)-length(wavelengths_chunk2)
-mass.spectra <- list()
-for (i in 1:length(filenames)){
-  intensity <- mass.spectra.baseline.corr[[i]]@intensity
-  intensity_chunk1 <- intensity[wavelengths < 900]
-  intensity_chunk2 <- intensity[wavelengths > 1100]
-  intensity_new <- rep(0, new.length)
-  intensity.total <-
-    append(append(intensity_chunk1,intensity_new),intensity_chunk2)
-  mass.spectrum <- createMassSpectrum(mass=wavelengths,
-                                      intensity=intensity.total)
-  MALDIquant::metaData(mass.spectrum) <- list(name=cell.name[i])
-  mass.spectra <- c(mass.spectra,mass.spectrum) }
+mass.spectra.cut <- wlcutter(mass.spectra.baseline.corr)
 
-#Visualize what I cut
-averagedSpectra_2 <- averageMassSpectra(mass.spectra)
+#Visualize what was cut
+averagedSpectra_2 <- averageMassSpectra(mass.spectra.cut)
 plot(averagedSpectra_2, add=TRUE)
 
 #I am happy with the new mass.spectra, so I substitute it for mass.spectra.baseline.corr

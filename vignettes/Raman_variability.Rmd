@@ -124,7 +124,7 @@ iterationsplot(mdqs.trim[[i]],number.of.iterations)
 
 Next, we actually correct the spectra and inspect the result.
 
-```{r blc, include=FALSE, eval=FALSE} 
+```{r blc, fig.width=7,fig.height=5, fig.cap=c("Comparison between original and baseline corrected spectrum for sample 2","Baseline corrected spectrum for sample 2","Averaged spectrum for all baseline corrected samples (with SNIP method)")} 
 # correct all spectra
 mass.spectra.baseline.corr <- removeBaseline(mdqs.trim, 
                                              method="SNIP",
@@ -136,26 +136,37 @@ baselinecorrplot(mass.spectra.baseline.corr,mdqs.trim,i=2,addorig=FALSE)
 
 #plot the average of the spectra to see how it looks before cutting
 averagedSpectra <- averageMassSpectra(mass.spectra.baseline.corr)
-ramplot(averagedSpectra, col="indianred",main="Averaged spectrum")
+ramplot(averagedSpectra, col="indianred",main="SNIP baseline corrected averaged spectrum")
+```
 
+Subsequently, an unexpected peak was removed (see citation) and the result was
+inspected. 
+
+```{r blccut, fig.width=7,fig.height=5, fig.cap=c("Averaged spectrum for all baseline corrected samples (with SNIP method) with unexpected peak removed")} 
 ## cut region 900-1100 cm-1 - unexpected peak
 mass.spectra.cut <- wlcutter(mass.spectra.baseline.corr)
 
 #Visualize what was cut
 averagedSpectra_2 <- averageMassSpectra(mass.spectra.cut)
-plot(averagedSpectra_2, add=TRUE)
+ramplot(averagedSpectra_2, main=NULL)
 
 #I am happy with the new mass.spectra, so I substitute it for mass.spectra.baseline.corr
-mass.spectra.baseline.corr<-mass.spectra
+mass.spectra.baseline.corr<-mass.spectra.cut
+```
 
-# NORMALISATION:
-# surface = 1
-# peak maximum normalisation is also possible
+
+### Normalisation
+
+Here, we normalize to have the total area under the peaks eqaul to 1. Normalisation helps compare spectral datasets, regardless of acquisition parameters. An alternative
+normalisation strategy that is a possibility is to use the peak maximum normalisation.
+
+
+```{r normalisation, fig.width=7,fig.height=5, fig.cap=c("TIC normalized Raman spectrum of sample 2")} 
 mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
-plot(mq.norm[[i]], main = "Normalisation", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
- par(mfrow=c(2,1))
- plot(mq.norm[[1]], main = "Normalisation with peak", xlab=expression("Wavenumber (cm"^-1*")") , ylab="Intensity (AU)",ylim=c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]]))))
+ramplot(mq.norm[[2]],main="TIC normalized Raman spectrum")
+```
 
+```{r similarities,include=FALSE, eval=FALSE} 
 #### change MALDIquant (mq.norm) object in Hyperspec (hs.norm) object ####
 # get the intensity matrix from the mq.norm object
 #matrix.spectra <- matrix(, nrow=  length(mq.norm), ncol = length(wavelengths.trim))

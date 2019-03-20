@@ -43,7 +43,9 @@ Imports:
     grid,
     reshape2,
     caret,
-    flowAI
+    flowAI,
+    magrittr,
+    methods
 biocViews: CellBasedAssays, Raman Spectroscopy, Infrastructure, Software, Clustering
 License: GPL-3
 Encoding: UTF-8

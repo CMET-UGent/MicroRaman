@@ -158,13 +158,28 @@ mass.spectra.baseline.corr<-mass.spectra.cut
 ### Normalisation
 
 Here, we normalize to have the total area under the peaks eqaul to 1. Normalisation helps compare spectral datasets, regardless of acquisition parameters. An alternative
-normalisation strategy that is a possibility is to use the peak maximum normalisation.
+normalisation strategy that is a possibility is to use the peak maximum normalisation. 
 
 
 ```{r normalisation, fig.width=7,fig.height=5, fig.cap=c("TIC normalized Raman spectrum of sample 2")} 
 mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
 ramplot(mq.norm[[2]],main="TIC normalized Raman spectrum")
 ```
+
+### Calculate similarities and perform clustering
+
+Here, we first transform the baseline-corrected and normalized spectrum back to
+a hyperSpec object. Three options were used to calculate the similarities:
+
+1. Using the existing ecological dissimilarity metrics as available through the 
+   package `vegan` in it's function `vegdist`. In this case, the Bray-Curtis 
+   index was used, because of our previence experience that it was useful for 
+   single-cell data as derived by means of flow cytometry. 
+2. An alternative similarity metric is the spectral contract angle (SCA). The 
+   SCA measures the angle between two vectors corresponding to closely related 
+   spectra to measure whether they are the same or not (Wan *et al.* 2002). 
+   
+Next, we perform hierarchical clustering using Ward's D2 linkage.
 
 ```{r similarities,include=FALSE, eval=FALSE} 
 #### change MALDIquant (mq.norm) object in Hyperspec (hs.norm) object ####

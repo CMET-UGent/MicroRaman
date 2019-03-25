@@ -14,9 +14,8 @@ Suggests: phyloseq,
     knitr,
     rmarkdown
 Depends:
-    R (>= 3.5.0), hyperSpec, baseline, plotrix, MALDIquant
+    R (>= 3.5.0), hyperSpec, MALDIquant
 Imports:
-    hyperSpec,
     baseline,
     e1071,
     rgl,
@@ -24,8 +23,7 @@ Imports:
     openxlsx,
     plotrix,
     reshape2,
-    lattice, 
-    MALDIquant,
+    lattice,
     RColorBrewer,
     dendextend,
     colorspace,
@@ -41,11 +39,11 @@ Imports:
     sandwich,
     cluster,
     grid,
-    reshape2,
     caret,
     flowAI,
     magrittr,
-    methods
+    methods,
+    ape
 biocViews: CellBasedAssays, Raman Spectroscopy, Infrastructure, Software, Clustering
 License: GPL-3
 Encoding: UTF-8

@@ -20,7 +20,6 @@
 #' hs.norm <- mq2hs(mq.norm)
 #' disst <- SCA.diss(hs.norm)
 #' @export
-#'
 
 SCA.diss <- function(x){
   if(!class(x)=="hyperSpec"){

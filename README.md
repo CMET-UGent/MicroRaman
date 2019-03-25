@@ -20,10 +20,18 @@ install_github("CMET-UGent/MicroRaman_package")
 
 Functions  | Actions
 ------------| -----------
+baselinecorrplot | plot the result of optimal baseline correction
 hs2mq | converts a `hyperSpec::hyperSpec` object directly to a `MALDIquant::MassSpectrum` object
 intervalplot | plotting function that shows if (trimmed) wavelengths are evenly spaced
+iterationsplot | plot the effect of iterations on baseline correction
 grid_arrange_shared_legend | Function for creating a common legend for 2 ggplot2 figures.
 iterationsplot | plots baseline correction for several iterations on the spectral data to determine the optimal number of iterations
+mq2hs | Convert a MassSpectrum object to a hyperSpec object
+ramplot | Convenience function to plot Raman spectra (from `MALDIquant::MassSpectrum`)
+SCA | calculates the spectral contracst angle between two vectors
+SCA.diss | calculates the spectral contrast angle (SCA) between all cells in a hyperSpec object
+wlcutter | Set intensities of a given bandpass to a defined value (anomalous peak removal)
+
 
 ## Avaiable datasets
 
@@ -36,5 +44,7 @@ data("<name of dataset>")
 
 Dataset name | Data contents
 -------------| ----------------
+mass.spectra.baseline.corr |
+mdqs | Raman spectrometry test single-cell data of Escherichia coli LMG2092 biological replicates (list of MALDIquant objects)
 spx.all | Hyperspec dataset (list of hyperSpec class objects) from single-cell data of *E. coli* LMG 2092 in triplicate in NB and LB test.
 

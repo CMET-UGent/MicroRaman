@@ -4,10 +4,12 @@
 \alias{mq2hs}
 \title{Convert a MassSpectrum object to a hyperSpec object}
 \usage{
-mq2hs(x)
+mq2hs(x, sampleNames = NULL)
 }
 \arguments{
 \item{x}{hyperSpec object}
+
+\item{sampleNames}{an (optional) character vector of length(x) to designate sample names}
 }
 \description{
 This function converts a list of MALDIquant::MassSpectrum  objects to a
@@ -21,6 +23,12 @@ MassSpectrum objects have the same wavelengths as the first entry in the list.
 data("mass.spectra.baseline.corr")
 mass.spectra.baseline.corr <- wlcutter(mass.spectra.baseline.corr)
 mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
+# Sample names from metadata
+labels <-  sub(pattern = ".*/(.*.spc)","\\\\1",
+x =sapply(mq.norm,function(x)x@metaData$name))
+Medium <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[2])))
+Replicate <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[3])))
+smpnms <- paste(Medium,Replicate)
 # Convert to hyperSpec object
-hs.norm <- mq2hs(mq.norm)
+hs.norm <- mq2hs(mq.norm,sampleNames=smpnms)
 }

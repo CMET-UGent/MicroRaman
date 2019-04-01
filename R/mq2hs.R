@@ -4,6 +4,7 @@
 #' hyperSpec::hyperSpec object for downstream processing. It assumes all
 #' MassSpectrum objects have the same wavelengths as the first entry in the list.
 #' @param x hyperSpec object
+#' @param sampleNames an (optional) character vector of length(x) to designate sample names
 #' @importFrom MALDIquant isMassSpectrum mass
 #' @importFrom methods new
 #' @examples
@@ -13,11 +14,17 @@
 #' data("mass.spectra.baseline.corr")
 #' mass.spectra.baseline.corr <- wlcutter(mass.spectra.baseline.corr)
 #' mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
+#' # Sample names from metadata
+#' labels <-  sub(pattern = ".*/(.*.spc)","\\1",
+#' x =sapply(mq.norm,function(x)x@metaData$name))
+#' Medium <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[2])))
+#' Replicate <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[3])))
+#' smpnms <- paste(Medium,Replicate)
 #' # Convert to hyperSpec object
-#' hs.norm <- mq2hs(mq.norm)
+#' hs.norm <- mq2hs(mq.norm,sampleNames=smpnms)
 #' @export
 
-mq2hs <- function(x){
+mq2hs <- function(x,sampleNames=NULL){
   if(is.null(x)|sum(sapply(x,isMassSpectrum))!=length(x)){
     stop("Error: you did not supply a valid list of MassSpectrum objects,
          and there is no default, please correct")
@@ -34,5 +41,16 @@ mq2hs <- function(x){
                 wavelength = mass(x[[1]]), labels= cnames)
   rownames(hsobj@data$spc) <- cnames
   colnames(hsobj@data$spc) <- mass(x[[1]])
+  if(!is.null(sampleNames)){
+    if(!length(hsobj)==length(sampleNames)){
+      stop(paste0("The supplied sample name vector length (",
+                  length(sampleNames),
+                  ") is not the same as the amount of samples (",
+                  length(x),
+                  ") in the list of MALDIquant objects"))
+    }else{
+    hsobj@label <- as.list(sampleNames)
+    }
+  }
   return(hsobj)
 }

@@ -162,7 +162,8 @@ normalisation strategy that is a possibility is to use the peak maximum normalis
 
 
 ```{r normalisation, fig.width=7,fig.height=5, fig.cap=c("TIC normalized Raman spectrum of sample 2")} 
-mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
+mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, 
+                              method="TIC",range=c(600, 1800))
 ramplot(mq.norm[[2]],main="TIC normalized Raman spectrum")
 ```
 
@@ -181,109 +182,40 @@ a hyperSpec object. Three options were used to calculate the similarities:
    
 Next, we perform hierarchical clustering using Ward's D2 linkage.
 
-```{r similarities,include=FALSE, eval=FALSE} 
-#### change MALDIquant (mq.norm) object in Hyperspec (hs.norm) object ####
-# get the intensity matrix from the mq.norm object
-#matrix.spectra <- matrix(, nrow=  length(mq.norm), ncol = length(wavelengths.trim))
-matrix.spectra <- matrix(nrow=  length(mq.norm), ncol = length(wavelengths))
-for (i in 1:length(mq.norm)){
-  matrix.spectra[i,] <- intensity(mq.norm[[i]])
-}
+```{r similarities, fig.width=8,fig.height=5, fig.cap=c("SCA-based hierarchical clustering of the cells","Heatmap showing the full dataset","SCA-based hierarchical clustering of the cells, with visualisation of clusters at a height of 0.75","SCA-based hierarchical clustering of the cells colored per medium and with a shape per replicate, the colors of the clusters indicate 8 selected clusters (at h=0.75)","Separate trees for the first four clusters","Separate trees for the next four clusters")} 
+hs.norm3 <- mq2hs(mq.norm) #conversion to hyperSpec object
 
-hs.norm <- new ("hyperSpec", spc = matrix.spectra, wavelength = wavelengths, labels= cell.name)
-#rownames(hs.norm) = make.names(cell.name, unique=TRUE)
-#rownames(hs.norm) <- cell.name
-#rownames(hs.norm@data$spc) <- cell.name
-#colnames(hs.norm@data$spc) <- wavelengths
-
-
-#### calculate the similarity ####
-
-## OPTION 1 
-# using the existing functions in vegan
-# research on FCM data showed that Jaccard and Bray yield similar and good results
+### OPTION 1: Bray-curtis ------------------------------------------------------
 library(vegan)        
-diss <- vegdist(hs.norm[[]], method = 'bray')
+diss <- vegdist(hs.norm3[[]], method = 'bray') #cell-level dissimilarities
 
 
-## OPTION 2 
-# making a customised function
-require(dplyr)
-require(NISTunits)
-## OPTION 1
-# using the existing functions in vegan
-# research on FCM data showed that Jaccard and Bray yield similar and good results
-diss <- vegdist(hs.norm[[]], method = 'bray')
-
-
-## OPTION 3
-# making a customised function
-
-SCA <- function(a, b) {
-  teller <- sum(a*b)
-  kwad1 <- sapply(a, FUN= function(x) x^2)%>%sum()
-  kwad2 <- sapply(b, FUN= function(x) x^2)%>%sum()
-  noemer <- sqrt(kwad1*kwad2)
-  cos <- teller/noemer
-  theta <- NISTradianTOdeg(acos(cos))
-  theta <- theta/90
-  return(theta)
-}
-
-# in the SCA raman the Raman@data$spc is given as matrix in the function with each row containing the cells and each column being a feature
-SCA.raman <- function(x){
-  diss <- matrix( nrow = nrow(x), ncol = nrow(x))
-  for (i in 1:nrow(x)){
-    for (j in 1:nrow(x)) {
-      diss[i,j] <- SCA(x[i,], x[j,])
-      row.names(diss) <- cell.name
-    }
-  }
-  diss <- as.dist(diss)
-  attr(diss, "method") <- "SCA.raman"
-  return(diss)
-}
-
-# Calculate the spectral contrast angle
-similarity <- SCA.raman(hs.norm@data$spc)
-
-# making a dendrogram based on the calculated similarity matrix
-dendrogram <- hclust(similarity, method="ward.D2")
+### OPTION 2: spectral contrast angle ------------------------------------------
+similarity.2 <- SCA.diss(hs.norm3)
+### making a dendrogram based on the calculated similarity matrix --------------
+dendrogram <- hclust(similarity.2, method="ward.D2")
 plot(dendrogram)
 
-#export 
+### export tree ---------------------------------------------------------------- 
 library(ape)
 dendrogram_phylo <- as.phylo(dendrogram)
-write.tree(dendrogram_phylo, file = "Dendrogram_LBvsNB_Raman", digits = 10)
+write.tree(dendrogram_phylo, file = "Dendrogram_LBvsNB_Raman.nwk", digits = 10)
 
-heatmap(as.matrix(similarity))
+# The heatmap shows clear structers in the dataset. 
+heatmap(as.matrix(similarity.2))
 
 #New name to export to iTOL
 
-# cell.name=rep(" ",length(filenames))
-# for (i in 1:length(filenames)) {
-#   cell.name[i] <-paste(Medium[i],Replicate[i],collapse=NULL)
-# }
-# 
-# rownames(hs.norm@data$spc) <- make.unique(cell.name,sep = "_")
-# rownames(hs.norm) <- make.unique(cell.name,sep = "_")
-# similarity.itol <- SCA.raman(hs.norm@data$spc)
-# 
-# dendrogram.itol <- hclust(similarity.itol, method="ward.D2")
-# dendrogram.itol$tip.label <- make.unique(cell.name,sep = "_")
-# library(ape)
-# dendrogram.itol <- as.phylo(dendrogram.itol)
-# write.tree(dendrogram.itol, file = "Dendrogram_LBvsNB", digits = 10)
+dg.itol <- SCAtoItol(hs.norm3,Factor1 = Medium,Factor2=Replicate)
+write.tree(dg.itol,file="Dendrogram_LBvsNB.nwk",digits=10)
+### at the given height calculate what cell is in what cluster -----------------
+clusters <- cluscutplot(dendrogram)
 
-#### at the given height calculate what cell is in what cluster ####
-clusters<- as.matrix(cutree(dendrogram, h= 0.7))
-plot(dendrogram)
-rect.hclust(dendrogram, k=max(clusters), border="red")
-
-## The tree at 0.75 has 8 clusters (k)
+# The tree at 0.75 has 8 clusters (k)
+# max(clusters) #=> 8
 k <- 8
 library(colorspace)
-library(dendextend)
+suppressPackageStartupMessages(library(dendextend))
 cols <- rainbow_hcl(k)
 dend <- as.dendrogram(dendrogram)
 dend <- color_branches(dend, k = k)
@@ -291,7 +223,7 @@ dend <- color_branches(dend, k = k)
 
 # Set colors and shapes code
 groupCodes<- c(rep("LBrep1", 45), rep("LBrep2", 45), rep("LBrep3", 44), rep("NBrep1", 45), rep("NBrep2", 44), rep("NBrep3", 45))
-rownames(hs.norm) <- make.unique(groupCodes)
+rownames(hs.norm3) <- make.unique(groupCodes)
 
 colorCodes <- c(LBrep1="steelblue1", LBrep2="steelblue", LBrep3="steelblue4", NBrep1="indianred1", NBrep2="indianred", NBrep3="indianred4")
 labels_colors(dend) <- colorCodes[groupCodes][order.dendrogram(dend)]
@@ -309,17 +241,19 @@ dend %>% set("leaves_pch", leaves_pch) %>%  # node point type
   #circlize_dendrogram(dend, labels_track_height = NA, dend_track_height = .4) 
 plot(main = "Phenotypes and replicates", ylab="Height", leaflab="none",  type = "rectangle")
 legend('topright',c("LB rep1", "LB rep2", "LB rep3","NB rep1", "NB rep2", "NB rep3") , pch= c(8,17,13),col=c("steelblue1", "steelblue", "steelblue4", "indianred1","indianred","indianred4"))
-       
 
-#par(mar = rep(0,4))
+### optional: a circular representation ----------------------------------------       
+# library(circlize)
+# par(mar = rep(0,4))
 # circlize_dendrogram(dend, dend_track_height = 0.8) 
-#circlize_dendrogram(dend, labels_track_height = NA, dend_track_height = .4) 
+# circlize_dendrogram(dend, labels_track_height = NA, dend_track_height = .4) 
 
 
-### Plot separated trees
+### Plot separated trees -------------------------------------------------------
 
+labels(dend) <- make.unique(labels(dend),sep="_")
 labels_dend <- labels(dend)
-groups <- cutree(dend, k=8, order_clusters_as_data = TRUE)
+groups <- dendextend::cutree(dend, k=8, order_clusters_as_data = TRUE)
 dends <- list()
 
 for(i in 1:k) {
@@ -329,37 +263,78 @@ for(i in 1:k) {
 
 par(mfrow = c(2,2))
 
-for(i in 1:k) { 
-  plot(dends[[i]], 
-       main = paste0("Tree number ", i))
+for(i in 1:k) {
+  plot(dends[[i]],
+       main = paste0("Tree for cluster number ", i))
 }
+```
 
+#### Visualizing spectra of selected clusters
 
-##Automatic cluster plot depending on groups
+After allowing SCA-based cluster delineation in a semi-automated way, it can be
+a good idea to inspect the spectra of those clusters.
 
-hs.norm$clusters<- as.factor(cutree(dendrogram, k=8))
-clusters<- as.matrix(cutree(dendrogram, k=8))
+```{r groupspectra, fig.width=8,fig.height=5, fig.cap=c("Mean spectrum for the first 4 clusters","Mean spectrum for the second 4 clusters","SCA-based hierarchical clustering of the cells colored per medium and with a shape per replicate, the colors of the clusters indicate 8 selected clusters (at h=0.75)")} 
+### Spectra according to clusters ----------------------------------------------
+# by default plot calls plotspc for a hyperSpec object
+# this will plot maximally 25 spectra from each group (see hy.getOption("plot.spc.nmax"))
+# it is possible to also show the average, which is what we did here
+# 
+hs.norm3$clusters<- as.factor(cutree(dendrogram, k=8))
+
+c1 <- subset(hs.norm3,clusters==1)
+c2 <- subset(hs.norm3,clusters==2)
+c3 <- subset(hs.norm3,clusters==3)
+c4 <- subset(hs.norm3,clusters==4)
+c5 <- subset(hs.norm3,clusters==5)
+c6 <- subset(hs.norm3,clusters==6)
+c7 <- subset(hs.norm3,clusters==7)
+c8 <- subset(hs.norm3,clusters==8)
 
 par(mfrow = c(2,2))
-c1=subset(hs.norm,clusters==1)
-plot(c1)
-c2=subset(hs.norm,clusters==2)
-plot(c2)
-c3=subset(hs.norm,clusters==3)
-plot(c3)
-c4=subset(hs.norm,clusters==4)
-plot(c4)
-c5=subset(hs.norm,clusters==5)
-plot(c5)
-c6=subset(hs.norm,clusters==6)
-plot(c6)
-c7=subset(hs.norm,clusters==7)
-plot(c7)
-c8=subset(hs.norm,clusters==8)
-plot(c8)
+plot(c1,func=mean,
+     title.args=list(y=list(ylab="Normalized intensity (AU)"),
+                     x=list(xlab=expression("Wavenumber (cm"^-1*")")),
+                     main="Average spectrum for cluster 1"))
+box()
+plot(c2,func=mean,
+     title.args=list(y=list(ylab="Normalized intensity (AU)"),
+                     x=list(xlab=expression("Wavenumber (cm"^-1*")")),
+                     main="Average spectrum for cluster 2"))
+box()
+plot(c3,func=mean,
+     title.args=list(y=list(ylab="Normalized intensity (AU)"),
+                     x=list(xlab=expression("Wavenumber (cm"^-1*")")),
+                     main="Average spectrum for cluster 3"))
+box()
 
-### Manual cluster validation
-correct_C1<- grep("LB", rownames(c1))
+plot(c4,func=mean,
+     title.args=list(y=list(ylab="Normalized intensity (AU)"),
+                     x=list(xlab=expression("Wavenumber (cm"^-1*")")),
+                     main="Average spectrum for cluster 4"))
+box()
+plot(c5,func=mean,
+     title.args=list(y=list(ylab="Normalized intensity (AU)"),
+                     x=list(xlab=expression("Wavenumber (cm"^-1*")")),
+                     main="Average spectrum for cluster 5"))
+box()
+plot(c6,func=mean,
+     title.args=list(y=list(ylab="Normalized intensity (AU)"),
+                     x=list(xlab=expression("Wavenumber (cm"^-1*")")),
+                     main="Average spectrum for cluster 6"))
+box()
+plot(c7,func=mean,
+     title.args=list(y=list(ylab="Normalized intensity (AU)"),
+                     x=list(xlab=expression("Wavenumber (cm"^-1*")")),
+                     main="Average spectrum for cluster 7"))
+box()
+plot(c8,func=mean,
+     title.args=list(y=list(ylab="Normalized intensity (AU)"),
+                     x=list(xlab=expression("Wavenumber (cm"^-1*")")),
+                     main="Average spectrum for cluster 8"))
+box()
+### Manual cluster validation --------------------------------------------------
+correct_C1<- grep("LB",rownames(c1))
 correct_C2<- grep("LB",rownames(c2))
 correct_C3<- grep("LB",rownames(c3))
 correct_C4<- grep("NB",rownames(c4))
@@ -368,10 +343,19 @@ correct_C6<- grep("NB",rownames(c6))
 correct_C7<- grep("NB",rownames(c7))
 correct_C8<- grep("NB",rownames(c8))
 
-correct_cluster<- length(correct_C1)+length(correct_C2)+length(correct_C3)+length(correct_C4)+length(correct_C5)+length(correct_C6)+length(correct_C7)+length(correct_C8)
+correct_cluster<- length(correct_C1)+length(correct_C2)+length(correct_C3)+
+                  length(correct_C4)+length(correct_C5)+length(correct_C6)+
+                  length(correct_C7)+length(correct_C8)
 
-accuracy_cluster <- correct_cluster/268
-accuracy_cluster
+accuracy_cluster <- correct_cluster/length(hs.norm3)
+```
+
+The obtained clustering accuracy based upon the SCA with hierarchical clustering
+using Ward's D2 linkage was `r scales::percent(accuracy_cluster)`.
+
+### Dimensionality reduction
+
+```{r ordination, include=FALSE, eval=FALSE} 
 
 #### PCA ####
 pca <- prcomp(hs.norm$.)

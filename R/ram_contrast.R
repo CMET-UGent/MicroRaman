@@ -11,14 +11,18 @@
 #' @importFrom stats rect.hclust
 #' @examples
 #' ## Short example
+#' ### Load and pretransform MassSpectrum object
 #' data("mass.spectra.baseline.corr")
-#' mass.spectra.baseline.corr <- wlcutter(mass.spectra.baseline.corr)
-#' mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
-#' x =sapply(mq.norm,function(x)x@metaData$name))
+#' data("spx.all")
+#' mdqs <- lapply(spx.all,hs2mq)
+#' labels <-  sub(pattern = ".*/(.*.spc)","\\1",
+#' x =sapply(mdqs,function(x)x@metaData$name))
 #' Medium <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[2])))
 #' Replicate <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[3])))
 #' smpnms <- paste(Medium,Replicate)
-#' # Convert to hyperSpec object
+#' mass.spectra.baseline.corr <- wlcutter(mass.spectra.baseline.corr)
+#' mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
+#' ### Convert to hyperSpec object
 #' hs.norm <- mq2hs(mq.norm,sampleNames=smpnms)
 #' ram_contrast(hyprs = hs.norm, comp1 = c("LB rep1", "LB rep2", "LB rep3"),
 #' comp2 = c("NB rep1","NB rep2","NB rep3"))

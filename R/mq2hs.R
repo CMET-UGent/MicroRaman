@@ -12,14 +12,15 @@
 #'
 #' # Load and pretransform MassSpectrum object
 #' data("mass.spectra.baseline.corr")
-#' mass.spectra.baseline.corr <- wlcutter(mass.spectra.baseline.corr)
-#' mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
-#' # Sample names from metadata
+#' data("spx.all")
+#' mdqs <- lapply(spx.all,hs2mq)
 #' labels <-  sub(pattern = ".*/(.*.spc)","\\1",
-#' x =sapply(mq.norm,function(x)x@metaData$name))
+#' x =sapply(mdqs,function(x)x@metaData$name))
 #' Medium <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[2])))
 #' Replicate <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[3])))
 #' smpnms <- paste(Medium,Replicate)
+#' mass.spectra.baseline.corr <- wlcutter(mass.spectra.baseline.corr)
+#' mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
 #' # Convert to hyperSpec object
 #' hs.norm <- mq2hs(mq.norm,sampleNames=smpnms)
 #' @export
@@ -32,7 +33,7 @@ mq2hs <- function(x,sampleNames=NULL){
   # in the current version of this script, we assume all spectra have the same
   # wavelengths as the first spectrum
   # TODO: remove this assumption in an intelligent way
-  matrix.spectra <- matrix(nrow=  length(x), ncol = length(mass(x[[1]])))
+  matrix.spectra <- matrix(nrow=length(x), ncol = length(mass(x[[1]])))
   for (i in 1:length(x)){
     matrix.spectra[i,] <- intensity(x[[i]])
   }
@@ -42,7 +43,7 @@ mq2hs <- function(x,sampleNames=NULL){
   rownames(hsobj@data$spc) <- cnames
   colnames(hsobj@data$spc) <- mass(x[[1]])
   if(!is.null(sampleNames)){
-    if(!length(hsobj)==length(sampleNames)){
+    if(!nrow(hsobj@data)==length(sampleNames)){
       stop(paste0("The supplied sample name vector length (",
                   length(sampleNames),
                   ") is not the same as the amount of samples (",

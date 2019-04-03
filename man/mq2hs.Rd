@@ -21,14 +21,15 @@ MassSpectrum objects have the same wavelengths as the first entry in the list.
 
 # Load and pretransform MassSpectrum object
 data("mass.spectra.baseline.corr")
-mass.spectra.baseline.corr <- wlcutter(mass.spectra.baseline.corr)
-mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
-# Sample names from metadata
+data("spx.all")
+mdqs <- lapply(spx.all,hs2mq)
 labels <-  sub(pattern = ".*/(.*.spc)","\\\\1",
-x =sapply(mq.norm,function(x)x@metaData$name))
+x =sapply(mdqs,function(x)x@metaData$name))
 Medium <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[2])))
 Replicate <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[3])))
 smpnms <- paste(Medium,Replicate)
+mass.spectra.baseline.corr <- wlcutter(mass.spectra.baseline.corr)
+mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
 # Convert to hyperSpec object
 hs.norm <- mq2hs(mq.norm,sampleNames=smpnms)
 }

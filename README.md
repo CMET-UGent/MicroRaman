@@ -13,7 +13,7 @@ García-Timermans, C., Rubbens, P., Kerckhof, F. M., Buysschaert, B., Khalenkow,
 Install the package:
 ```R
 library("devtools")
-install_github("CMET-UGent/MicroRaman_package")
+install_github("CMET-UGent/MicroRaman")
 ```
 
 ## Available functions

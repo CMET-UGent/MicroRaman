@@ -18,6 +18,10 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+library(MicroRaman)
+library(magrittr)
+library(RColorBrewer)
+library(dendextend)
 ```
 
 # Goal
@@ -45,12 +49,14 @@ E. coli LMG 2092 | 1 | CGT | LB, 28°C 120rmp
   
 # Procedure
 
-For each dataset, we will look at the spectra, and preprocess them. We then will cut the peak at $\sim 1000~\text{cm}^{-1}$ (suspicious). Next, we will make dendrograms and cut at a height that will allow us to see the plots well. Then we will plot the spectra for each cluster.
+For each dataset, we will look at the spectra, and preprocess them. 
+We then will cut the peak at $\sim 1000~\text{cm}^{-1}$ (suspicious). Next, we will make dendrograms and cut at a height that will allow us to see the plots well. Then we will plot the spectra for each cluster.
 Finally, we will use random forests (RF) to select the most relevant peaks for classification. We will also use the algorithm VSURF. Here, we will use the code from `RandomForest_RamanVariability`.
 
 ## Check triplicates in LB and NB (reproducibility)
 
-*E. coli* LMG 2092, 28°C, 24h, 120rpm
+In this example we used *E. coli* LMG 2092 with incubation at 28°C and 120rpm 
+for 24h (see original publication, Garcia-Timermans *et al.* (2018)).
 
 ### Data conversions
 
@@ -94,7 +100,7 @@ mdqs.rn <- lapply(seq_along(cnvect),
 ### TRIMMING
 
 Select the biologically relevant part of the fingerprint: 
-$600 - 1800~\text{cm}^{-1}$ (for dueterium $400 - 3200~\text{cm}^{-1}$?)
+$600 - 1800~\text{cm}^{-1}$ (for dueterium $400 - 3200~\text{cm}^{-1}$)
 
 ```{r trimming, fig.width=7,fig.height=5}
 mdqs.trim <- trim(mdqs.rn, range=c(600, 1800))
@@ -187,11 +193,16 @@ hs.norm3 <- mq2hs(mq.norm) #conversion to hyperSpec object
 
 ### OPTION 1: Bray-curtis ------------------------------------------------------
 library(vegan)        
-diss <- vegdist(hs.norm3[[]], method = 'bray') #cell-level dissimilarities
+diss <- vegan::vegdist(hs.norm3[[]], method = 'bray') #cell-level dissimilarities
 
 
 ### OPTION 2: spectral contrast angle ------------------------------------------
-similarity.2 <- SCA.diss(hs.norm3)
+# for reasons of computation time during rebuilding of vignettes, the
+# command below is commented out. It is recommended to re-activate it if you
+# would like to test it's performance
+# similarity.2 <- SCA.diss(hs.norm3)
+data("SCA.similarity")
+similarity.2 <- SCA.similarity
 ### making a dendrogram based on the calculated similarity matrix --------------
 dendrogram <- hclust(similarity.2, method="ward.D2")
 plot(dendrogram)
@@ -209,16 +220,14 @@ heatmap(as.matrix(similarity.2))
 dg.itol <- SCAtoItol(hs.norm3,Factor1 = Medium,Factor2=Replicate)
 write.tree(dg.itol,file="Dendrogram_LBvsNB.nwk",digits=10)
 ### at the given height calculate what cell is in what cluster -----------------
-clusters <- cluscutplot(dendrogram)
+clusters <- cluscutplot(dendrogram,h=0.75)
 
 # The tree at 0.75 has 8 clusters (k)
 # max(clusters) #=> 8
 k <- 8
-library(colorspace)
-suppressPackageStartupMessages(library(dendextend))
-cols <- rainbow_hcl(k)
+cols <- colorspace::rainbow_hcl(k)
 dend <- as.dendrogram(dendrogram)
-dend <- color_branches(dend, k = k)
+dend <- dendextend::color_branches(dend, k = k)
 
 
 # Set colors and shapes code
@@ -226,16 +235,16 @@ groupCodes<- c(rep("LBrep1", 45), rep("LBrep2", 45), rep("LBrep3", 44), rep("NBr
 rownames(hs.norm3) <- make.unique(groupCodes)
 
 colorCodes <- c(LBrep1="steelblue1", LBrep2="steelblue", LBrep3="steelblue4", NBrep1="indianred1", NBrep2="indianred", NBrep3="indianred4")
-labels_colors(dend) <- colorCodes[groupCodes][order.dendrogram(dend)]
+dendextend::labels_colors(dend) <- colorCodes[groupCodes][order.dendrogram(dend)]
 
 leaves_col<-colorCodes[groupCodes][order.dendrogram(dend)]
 
 shapeCodes <- c(LBrep1=8, LBrep2=17, LBrep3=13, NBrep1=8, NBrep2=17, NBrep3=13)
 leaves_pch<-shapeCodes[groupCodes][order.dendrogram(dend)]
 
-dend %>% set("leaves_pch", leaves_pch) %>%  # node point type
+dend %>% dendextend::set("leaves_pch", leaves_pch) %>%  # node point type
   #set("leaves_cex", 0.7) %>%  # node point size
-  set("leaves_col", leaves_col) %>% #node point color
+  dendextend::set("leaves_col", leaves_col) %>% #node point color
   #set("branches_col", leaves_col) %>%
   #par(mar = rep(0,4))
   #circlize_dendrogram(dend, labels_track_height = NA, dend_track_height = .4) 
@@ -250,15 +259,16 @@ legend('topright',c("LB rep1", "LB rep2", "LB rep3","NB rep1", "NB rep2", "NB re
 
 
 ### Plot separated trees -------------------------------------------------------
-
-labels(dend) <- make.unique(labels(dend),sep="_")
-labels_dend <- labels(dend)
+dendhc <- as.hclust(dend)
+dendhc$labels <- make.unique(base::labels(dend),sep="_")
+dend <- as.dendrogram(dendhc)
+labels_dend <- base::labels(dend)
 groups <- dendextend::cutree(dend, k=8, order_clusters_as_data = TRUE)
 dends <- list()
 
 for(i in 1:k) {
   labels_to_keep <- labels_dend[i != groups]
-  dends[[i]] <- prune(dend, labels_to_keep)
+  dends[[i]] <- dendextend::prune(dend, labels_to_keep)
 }
 
 par(mfrow = c(2,2))
@@ -412,3 +422,13 @@ hsnorm_stats <- cluster.stats(dist(hsnorm.df),  hs.norm$clusters)
 
 
 ```
+
+
+# References
+
+1. García-Timermans, C., Rubbens, P., Kerckhof, F. M., Buysschaert, B., Khalenkow, D., Waegeman, W., Skirtagh, A.G. & Boon, N. (2018). Label-free Raman characterization of bacteria calls for standardized procedures. *Journal of microbiological methods*, 151, 69-75.
+2. Wan, K. X., Vidavsky, I., & Gross, M. L. (2002). Comparing similar spectra: from similarity index to spectral contrast angle. *Journal of the American Society for Mass Spectrometry*, 13(1), 85-88.
+3. Gibb, S. and Strimmer, K. (2012). MALDIquant: a versatile R package for the analysis of mass spectrometry data. *Bioinformatics* 28, 2270-2271.
+4. Claudia Beleites and Valter Sergo: `hyperSpec: a package to handle hyperspectral data sets in R', R   package version 0.99-20180627. http://hyperspec.r-forge.r-project.org
+5. Letunic, I., & Bork, P. (2016). Interactive tree of life (iTOL) v3: an online tool for the display and annotation of phylogenetic and other trees. *Nucleic acids research*, 44(W1), W242-W245.
+

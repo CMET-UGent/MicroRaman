@@ -9,6 +9,8 @@
 #' @return a ggplot2 object with the contrast plot
 #' @importFrom dendextend is.hclust cutree
 #' @importFrom stats rect.hclust
+#' @importFrom rlang .data
+#' @importFrom ggplot2 geom_line ggplot geom_point scale_fill_distiller theme_bw
 #' @examples
 #' ## Short example
 #' ### Load and pretransform MassSpectrum object
@@ -70,7 +72,8 @@ ram_contrast <- function(hyprs, comp1, comp2, plot = TRUE){
              "\n \n"))
   if(plot){
     # Plot
-    v <- ggplot2::ggplot(results, ggplot2::aes(x = Wavenumber, y = Density, fill = Density))+
+    v <- ggplot2::ggplot(results, ggplot2::aes(x = .data$Wavenumber, y = .data$Density,
+                                               fill = .data$Density))+
       ggplot2::geom_point(shape = 21, colour="gray", alpha = 0.4,
                           size = 4)+
       geom_line()+

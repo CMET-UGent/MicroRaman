@@ -4,8 +4,12 @@
 \alias{grid_arrange_shared_legend}
 \title{Function for creating a common legend for 2 ggplot2 figures.}
 \usage{
-grid_arrange_shared_legend(..., ncol = length(list(...)), nrow = 1,
-  position = c("bottom", "right"))
+grid_arrange_shared_legend(
+  ...,
+  ncol = length(list(...)),
+  nrow = 1,
+  position = c("bottom", "right")
+)
 }
 \arguments{
 \item{...}{ggplot2 objects which could have a common legend}

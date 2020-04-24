@@ -1,22 +1,21 @@
 Package: MicroRaman
 Type: Package
-Title: Phenotyping of microbial Raman data
-Version: 0.1.1
+Title: Phenotyping of microbial Raman spectroscopy data
+Version: 0.1.2
 Authors@R: c(person("Frederiek-Maarten", "Kerckhof", email = "FrederiekMaarten.Kerckhof@UGent.be", role = c("aut", "cre")),
              person("Benjamin", "Buysschaert", email = "Benjamin.Buysschaert@UGent.be", role = "ctb"),
              person("Ruben", "Props", email = "Ruben.Props@UGent.be", role = "aut"),
-             person("Cristina", "Garcia-Timermans", email = "Cristina.GarciaTimermans@UGent.be", role = "aut"),
-             person("Dmitry", "Khalenkow", email = "Dmitry.Khalenkow@Ugent.be", role = "ctb"))
+             person("Cristina", "Garcia-Timermans", email = "Cristina.GarciaTimermans@UGent.be", role = "aut")
+             )
 Maintainer: Frederiek-Maarten kerckhof <frederiekmaarten.kerckhof@ugent.be>
 Description: Set of functions to pre-process and phenotype microbial Raman spectroscopy data.
-Remotes: github::zmzhang/baselinewavelet, github::rprops/Phenoflow_package
-Suggests: phyloseq,
-    knitr,
+Suggests: knitr,
     rmarkdown
 Depends:
     R (>= 3.5.0), hyperSpec, MALDIquant
 Imports:
     baseline,
+    tidyr,
     e1071,
     rgl,
     readxl,
@@ -40,7 +39,6 @@ Imports:
     cluster,
     grid,
     caret,
-    flowAI,
     magrittr,
     methods,
     ape,
@@ -50,4 +48,4 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: true
 VignetteBuilder: knitr
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.0

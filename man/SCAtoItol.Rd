@@ -4,9 +4,14 @@
 \alias{SCAtoItol}
 \title{Calculate the spectral conrast angle (SCA) and generate an iTol-compatible tree}
 \usage{
-SCAtoItol(x, Factor1 = c("LB", "NB", "LB"), Factor1Name = "Medium",
-  Factor2 = c("rep1", "rep2", "rep3"), Factor2Name = "Replicate",
-  clusMethod = "ward.D2")
+SCAtoItol(
+  x,
+  Factor1 = c("LB", "NB", "LB"),
+  Factor1Name = "Medium",
+  Factor2 = c("rep1", "rep2", "rep3"),
+  Factor2Name = "Replicate",
+  clusMethod = "ward.D2"
+)
 }
 \arguments{
 \item{x}{a hyperSpec object containing the cells in the rows, and wavenumbers (features) in columns}

@@ -4,7 +4,9 @@
 \name{SCA.similarity}
 \alias{SCA.similarity}
 \title{Similarity matrix based upon the Spectral contrast Angle (SCA) between all cells}
-\format{a dist object containing the SCA between each cell in the dataset}
+\format{
+a dist object containing the SCA between each cell in the dataset
+}
 \usage{
 SCA.similarity
 }

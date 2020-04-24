@@ -4,7 +4,9 @@
 \name{mass.spectra.baseline.corr}
 \alias{mass.spectra.baseline.corr}
 \title{Baseline-corrected Raman spectrometry test single-cell data of Escherichia coli LMG2092 biological replicates}
-\format{A list of MALDIquant::massSpectrum objects after baseline correction}
+\format{
+A list of MALDIquant::massSpectrum objects after baseline correction
+}
 \usage{
 mass.spectra.baseline.corr
 }

@@ -4,9 +4,13 @@
 \alias{ramplot}
 \title{Convenience function to plot Raman spectra (from MALDIquant::MassSpectrum)}
 \usage{
-ramplot(msspc, main = "Raman spectrum",
+ramplot(
+  msspc,
+  main = "Raman spectrum",
   xlab = expression("Wavenumber (cm"^-1 * ")"),
-  ylab = "Intensity (AU)", ...)
+  ylab = "Intensity (AU)",
+  ...
+)
 }
 \arguments{
 \item{msspc}{a MALDIquant::MassSpectrum (trimmed to relevant wavelengths)}

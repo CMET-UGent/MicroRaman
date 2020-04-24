@@ -4,8 +4,14 @@
 \alias{baselinecorrplot}
 \title{Plot the result of optimal baseline correction}
 \usage{
-baselinecorrplot(mscorr, msorig = NULL, i = 1L, addorig = FALSE,
-  methodused = "SNIP", ...)
+baselinecorrplot(
+  mscorr,
+  msorig = NULL,
+  i = 1L,
+  addorig = FALSE,
+  methodused = "SNIP",
+  ...
+)
 }
 \arguments{
 \item{mscorr}{a list of MALDIquant::massSpectrum objects after baseline

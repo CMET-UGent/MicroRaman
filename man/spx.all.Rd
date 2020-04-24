@@ -4,7 +4,9 @@
 \name{spx.all}
 \alias{spx.all}
 \title{Raman spectrometry test single-cell data of Escherichia coli LMG2092 biological replicates}
-\format{Hyperspec dataset with 4 slots}
+\format{
+Hyperspec dataset with 4 slots
+}
 \usage{
 spx.all
 }

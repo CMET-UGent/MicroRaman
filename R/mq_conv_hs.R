@@ -15,18 +15,18 @@
 #' data("spx.all")
 #' mdqs <- lapply(spx.all,hs2mq)
 #' labels <-  sub(pattern = ".*/(.*.spc)","\\1",
-#' x =sapply(mdqs,function(x)x@metaData$name))
+#' x <- sapply(mdqs,function(x)x@metaData$name))
 #' Medium <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[2])))
 #' Replicate <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[3])))
 #' smpnms <- paste(Medium,Replicate)
 #' mass.spectra.baseline.corr <- wlcutter(mass.spectra.baseline.corr)
 #' mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
 #' # Convert to hyperSpec object
-#' hs.norm <- mq2hs(mq.norm,sampleNames=smpnms)
+#' hs.norm <- mq_conv_hs(mq.norm,sampleNames=smpnms)
 #' @export
 
-mq2hs <- function(x,sampleNames=NULL){
-  if(is.null(x)|sum(sapply(x,isMassSpectrum))!=length(x)){
+mq_conv_hs <- function(x,sampleNames=NULL){
+  if(is.null(x)|sum(sapply(x,isMassSpectrum)) != length(x)){
     stop("Error: you did not supply a valid list of MassSpectrum objects,
          and there is no default, please correct")
   }

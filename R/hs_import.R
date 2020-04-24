@@ -2,7 +2,7 @@
 #'
 #' This function imports raman data (Thermo Galactic's spc file format) into the R environment
 #' @param hs.x hyperSpec object
-#' @importFrom MALDIquant orderwl read.spc
+#' @importFrom hyperSpec orderwl read.spc
 #' @examples
 #' # Import Raman spectral data
 #' hs.x <- hs_import(path = "")
@@ -11,7 +11,7 @@
 hs_import <- function(path = NULL) {
   # Sanity check
   if (is.null(path)) {
-    stop("Pleasse specify the correct path containing the spc files")
+    stop("Please specify the correct path containing the spc files")
   }
   # Load data if path is given
   if (!is.null(path)) {

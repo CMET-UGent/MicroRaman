@@ -11,10 +11,10 @@
 #' data("hs.example")
 #'
 #' # Convert to MassSpectrum object
-#' mdqs <- hs2mq(hs.example)
+#' mdqs <- hs_conv_mq(hs.example)
 #' @export
 
-hs2mq <- function(hs.x){
+hs_conv_mq <- function(hs.x){
   # Sanity check
   if(is.null(x)|class(x)!="hyperSpec"){
     stop("Error: you did not supply a valid hyperSpec object,

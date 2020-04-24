@@ -20,5 +20,5 @@ MALDIquant::MassSpectrum object for downstream processing.
 data("hs.example")
 
 # Convert to MassSpectrum object
-mdqs <- hs_conv_mq(hs.example)
+mq.x <- hs_conv_mq(hs.example)
 }

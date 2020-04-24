@@ -4,12 +4,10 @@
 \alias{mq_conv_hs}
 \title{Convert a MassSpectrum object to a hyperSpec object}
 \usage{
-mq_conv_hs(x, sampleNames = NULL)
+mq_conv_hs(mq.x)
 }
 \arguments{
-\item{x}{hyperSpec object}
-
-\item{sampleNames}{an (optional) character vector of length(x) to designate sample names}
+\item{mq.x}{list of MALDIquant objects}
 }
 \description{
 This function converts a list of MALDIquant::MassSpectrum  objects to a
@@ -17,19 +15,12 @@ hyperSpec::hyperSpec object for downstream processing. It assumes all
 MassSpectrum objects have the same wavelengths as the first entry in the list.
 }
 \examples{
-## Short example
+# Load hyperSpec object
+data("hs.example")
 
-# Load and pretransform MassSpectrum object
-data("mass.spectra.baseline.corr")
-data("spx.all")
-mdqs <- lapply(spx.all,hs2mq)
-labels <-  sub(pattern = ".*/(.*.spc)","\\\\1",
-x <- sapply(mdqs,function(x)x@metaData$name))
-Medium <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[2])))
-Replicate <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[3])))
-smpnms <- paste(Medium,Replicate)
-mass.spectra.baseline.corr <- wlcutter(mass.spectra.baseline.corr)
-mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
-# Convert to hyperSpec object
-hs.norm <- mq_conv_hs(mq.norm,sampleNames=smpnms)
+# Convert to MassSpectrum object
+mq.x <- hs_conv_mq(hs.example)
+
+# Convert to hyperspec object
+hs.x <- mq_conv_hs(mq.x)
 }

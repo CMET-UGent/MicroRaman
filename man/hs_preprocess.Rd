@@ -33,10 +33,9 @@ hs_preprocess(
 Calculate the phenotypic heterogeneity indices for each cell
 }
 \examples{
-
 # Load hyperSpec object
 data("hs.example")
 
 # Load hyperSpec object
-hs_preprocess(hs.x = hs.example, smooth = FALSE)
+hs.x.proc <- hs_preprocess(hs.x = hs.example, smooth = TRUE)
 }

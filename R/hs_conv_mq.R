@@ -16,7 +16,7 @@
 
 hs_conv_mq <- function(hs.x){
   # Sanity check
-  if(is.null(x)|class(x)!="hyperSpec"){
+  if(is.null(hs.x)|class(hs.x)!="hyperSpec"){
     stop("Error: you did not supply a valid hyperSpec object,
          and there is no default, please correct")
   }

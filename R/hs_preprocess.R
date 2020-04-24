@@ -17,7 +17,7 @@
 #' data("hs.example")
 #'
 #' # Load hyperSpec object
-#' hs_preprocess(hs.x = hs.example, smooth = FALSE)
+#' hs.x.proc <- hs_preprocess(hs.x = hs.example, smooth = TRUE)
 #' @export
 
 hs_preprocess <- function(hs.x,
@@ -42,7 +42,7 @@ hs_preprocess <- function(hs.x,
   if (smooth) {
     # Smooth spectra
     hs.x <- spc.loess(hs.x, c(seq (0, hs.x@wavelength[length(hs.x@wavelength)])))
-    plot(hs.x, title = "Smoothed spectra")
+    plot(hs.x)
   }
 
   # hyperspec --> maldiquant

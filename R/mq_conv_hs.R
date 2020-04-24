@@ -28,20 +28,18 @@ mq_conv_hs <- function(mq.x) {
 
   # Create matrix for holding spectral data from mq list
   matrix.spectra <-
-    matrix(nrow = length(mq.x), ncol = length(mass(mq.x[[1]])))
-
-  # Loop through mq list
-  matrix.spectra <-
     matrix(unlist(lapply(mq.x, intensity)),
       ncol = length(mass(mq.x[[1]])), byrow = TRUE)
   cnames <- sapply(mq.x, function(x)
     x@metaData$name)
+
   hs.x <- new (
     "hyperSpec",
     spc = matrix.spectra,
     wavelength = mass(mq.x[[1]]),
     labels = cnames
   )
+
   rownames(hs.x@data$spc) <- cnames
   colnames(hs.x@data$spc) <- mass(mq.x[[1]])
 

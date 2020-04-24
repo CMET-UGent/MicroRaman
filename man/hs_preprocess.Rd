@@ -19,25 +19,24 @@ hs_preprocess(
 
 \item{smooth}{Smoothing TRUE/FALSE}
 
-\item{align}{Algn spectra TRUE/FALSE}
+\item{align}{Align spectra TRUE/FALSE}
+
+\item{path}{Path contain spc files if no hyperSpec object is available}
+
+\item{pattern}{Pattern of spc files to import from path}
+
+\item{trim.range}{Wavenumber range to trim from raw spectra.}
 
 \item{niter}{Number of iterations.}
-
-\item{peak_detection}{d}
-
-\item{peak_window}{d}
-
-\item{peak_method}{d}
-
-\item{d}{d}
 }
 \description{
 Calculate the phenotypic heterogeneity indices for each cell
 }
 \examples{
 
-## Short example
+# Load hyperSpec object
+data("hs.example")
 
 # Load hyperSpec object
-
+hs_preprocess(hs.x = hs.example, smooth = FALSE)
 }

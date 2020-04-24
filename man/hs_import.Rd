@@ -2,15 +2,15 @@
 % Please edit documentation in R/hs_import.R
 \name{hs_import}
 \alias{hs_import}
-\title{Import Raman spectral data}
+\title{Import Raman spectral data in the R environment}
 \usage{
 hs_import(path = NULL)
 }
 \arguments{
-\item{hs.x}{hyperSpec object}
+\item{path}{path}
 }
 \description{
-This function imports raman data (Thermo Galactic's spc file format) into the R environment
+This function imports Raman data (Thermo Galactic's spc file format) into the R environment
 }
 \examples{
 # Import Raman spectral data

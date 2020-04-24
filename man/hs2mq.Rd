@@ -4,10 +4,10 @@
 \alias{hs2mq}
 \title{Convert a hyperSpec object toa  MassSpectrum object}
 \usage{
-hs2mq(x)
+hs2mq(hs.x)
 }
 \arguments{
-\item{x}{hyperSpec object}
+\item{hs.x}{hyperSpec object}
 }
 \description{
 This function converts a hyperSpec::hyperSpec objects (default of Raman spectra) to a
@@ -17,8 +17,8 @@ MALDIquant::MassSpectrum object for downstream processing.
 ## Short example
 
 # Load hyperSpec object
-data("spx.all")
+data("hs.example")
 
 # Convert to MassSpectrum object
-mdqs <- lapply(spx.all,hs2mq)
+mdqs <- hs2mq(hs.example)
 }

@@ -14,7 +14,7 @@ PhenoRam(
   pattern = ".spc",
   niter = 10,
   return_spectra = TRUE,
-  peak_detection = TRUE,
+  peak_detection = FALSE,
   peak_window = 20,
   peak_method = c("MAD")
 )
@@ -48,5 +48,5 @@ Calculate the phenotypic heterogeneity indices for each cell
 ## Short example
 
 # Load hyperSpec object
-
+PhenoRam(hs.x = hs.x, preprocess = TRUE, peak_detection = TRUE)
 }

@@ -27,7 +27,9 @@ hs_conv_mq <- function(hs.x){
     wl <- hs.x@wavelength
     sc <- as.vector(hs.x@data$spc[i,])
     fn <- hs.x@data$filename[i]
-
+    if(is.null(fn)){
+      fn <- rownames(hs.x@data$spc)[i]
+    }
     # Create mass spectrum
     mass.spectrum <-
       createMassSpectrum(mass = wl,

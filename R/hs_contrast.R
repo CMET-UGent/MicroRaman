@@ -26,11 +26,11 @@
 #' mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
 #' ### Convert to hyperSpec object
 #' hs.norm <- mq2hs(mq.norm,sampleNames=smpnms)
-#' ram_contrast(hyprs = hs.norm, comp1 = c("LB rep1", "LB rep2", "LB rep3"),
+#' hs_contrast(hyprs = hs.norm, comp1 = c("LB rep1", "LB rep2", "LB rep3"),
 #' comp2 = c("NB rep1","NB rep2","NB rep3"))
 #' @export
 
-ram_contrast <- function(hyprs, comp1, comp2, plot = TRUE){
+hs_contrast <- function(hyprs, comp1, comp2, plot = TRUE){
   if(is.null(hyprs)|class(hyprs)!="hyperSpec"){
     stop("Error: you did not supply a valid hyperSpec object,
          and there is no default, please correct")

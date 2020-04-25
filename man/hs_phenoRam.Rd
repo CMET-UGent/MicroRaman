@@ -20,25 +20,24 @@ hs_phenoRam(
 )
 }
 \arguments{
-\item{hs.x}{d}
+\item{hs.x}{HyperSpec object}
 
-\item{preprocess}{d}
+\item{preprocess}{Preprocess? TRUE/FALSE. Defaults to FALSE.}
 
-\item{smooth}{d}
+\item{smooth}{Option for preprocessing. Defaults to FALSE.}
 
-\item{align}{d}
+\item{align}{Align option for preprocessing. Defaults to FALSE.}
 
-\item{niter}{d}
+\item{niter}{Number of iteration Option for preprocessing. Defaults to FALSE.}
 
-\item{return_spectra}{d}
+\item{return_spectra}{Should hyperSpec object be returned as final object? Defaults to TRUE.}
 
-\item{peak_detection}{d}
+\item{peak_detection}{Should peak detection be used instead of raw spectra for Hill calculations? Defaults to FALSE}
 
-\item{peak_window}{d}
+\item{peak_window}{Peak windows size for a peak to be considered a signal. Defaults to 20.}
 
-\item{peak_method}{d}
-
-\item{d}{d}
+\item{peak_method}{Which peak detection method should be used (requires peak_detection == TRUE).
+Options are "MAD" and "SuperSmoother"}
 }
 \description{
 Calculate the phenotypic heterogeneity indices for each cell

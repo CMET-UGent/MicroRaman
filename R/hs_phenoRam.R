@@ -1,15 +1,15 @@
 #' Calculate the phenotypic heterogeneity indices for each cell
 #'
-#' @param hs.x d
-#' @param preprocess d
-#' @param smooth d
-#' @param align d
-#' @param niter d
-#' @param return_spectra d
-#' @param peak_detection d
-#' @param peak_window d
-#' @param peak_method d
-#' @param d d
+#' @param hs.x HyperSpec object
+#' @param preprocess Preprocess? TRUE/FALSE. Defaults to FALSE.
+#' @param smooth Option for preprocessing. Defaults to FALSE.
+#' @param align Align option for preprocessing. Defaults to FALSE.
+#' @param niter Number of iteration Option for preprocessing. Defaults to FALSE.
+#' @param return_spectra Should hyperSpec object be returned as final object? Defaults to TRUE.
+#' @param peak_detection Should peak detection be used instead of raw spectra for Hill calculations? Defaults to FALSE
+#' @param peak_window Peak windows size for a peak to be considered a signal. Defaults to 20.
+#' @param peak_method Which peak detection method should be used (requires peak_detection == TRUE).
+#' Options are "MAD" and "SuperSmoother"
 #' @importFrom MALDIquant isMassSpectrum intensity createMassSpectrum mass calibrateIntensity trim estimateBaseline removeBaseline
 #' @importFrom  MALDIquant alignSpectra
 #' @importFrom tidyr spread

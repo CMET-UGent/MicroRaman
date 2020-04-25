@@ -29,11 +29,11 @@
 #'
 #' # Extract wavelengths and plot
 #' mdqs.trim <- trim(mdqs, range=c(600, 1800))
-#' baselinecorrplot(mass.spectra.baseline.corr,mdqs.trim,i=2,addorig=TRUE)
+#' mq_baseline_plot(mass.spectra.baseline.corr,mdqs.trim,i=2,addorig=TRUE)
 #'
 #' @export
 
-baselinecorrplot <- function(mscorr,msorig=NULL,i=1L,addorig=FALSE,methodused="SNIP",...){
+mq_baseline_plot <- function(mscorr,msorig=NULL,i=1L,addorig=FALSE,methodused="SNIP",...){
   # TODO: allow for a vector of i to be passed
   if(i>length(mscorr)){
     stop(paste0("You selected cell number ",i," but there are only ",

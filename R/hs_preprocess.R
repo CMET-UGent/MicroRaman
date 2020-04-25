@@ -59,7 +59,7 @@ hs_preprocess <- function(hs.x,
     main = "SNIP baseline correction",
     xlab = expression("Wavenumber (cm" ^ -1 * ")"),
     ylab = "Intensity (AU)",
-    ylim = c(min(intensity(mq.trim[[i]])), max(intensity(mq.trim[[i]])))
+    ylim = c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]])))
   )
   baseline <-
     estimateBaseline(mq.trim[[1]], method = "SNIP", iterations = niter)

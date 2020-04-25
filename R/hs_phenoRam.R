@@ -20,10 +20,10 @@
 #' ## Short example
 #'
 #' # Load hyperSpec object
-#' PhenoRam(hs.x = hs.x, preprocess = TRUE, peak_detection = TRUE)
+#' hs_phenoRam(hs.x = hs.x, preprocess = TRUE, peak_detection = TRUE)
 #' @export
 #'
-PhenoRam <- function(hs.x,
+hs_phenoRam <- function(hs.x,
   preprocess = FALSE,
   smooth = FALSE,
   align = FALSE,

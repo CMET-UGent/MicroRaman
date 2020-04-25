@@ -64,7 +64,5 @@ data("<name of dataset>")
 
 Dataset name | Data contents
 -------------| ----------------
-mass.spectra.baseline.corr |baseline-corrected raman spectra
 mdqs | Raman spectrometry test single-cell data of Escherichia coli LMG2092 biological replicates (list of MALDIquant objects)
 spx.all | Hyperspec dataset (list of hyperSpec class objects) from single-cell data of *E. coli* LMG 2092 in triplicate in NB and LB test.
-SCA.similarity | Spectral contrast angle similarities calculated on the spx.all/mdqs data

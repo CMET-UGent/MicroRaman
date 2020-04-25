@@ -3,7 +3,6 @@
 #' @param hs.x Hyperspec object on which to perform predictions
 #' @param model Model to use for predictions. Output from hs_RF.
 #' @importFrom tidyr spread
-#' @importFrom caret predict
 #' @importFrom randomForest randomForest
 #' @examples
 #' # Short example

@@ -31,7 +31,7 @@
 #' ape::write.tree(itolius, file = "Dendrogram", digits = 10)
 #' @export
 
-SCAtoItol <- function(x,Factor1=c("LB","NB","LB"),Factor1Name="Medium",
+hs_SCA_conv_itol <- function(x,Factor1=c("LB","NB","LB"),Factor1Name="Medium",
                       Factor2=c("rep1","rep2","rep3"),Factor2Name="Replicate",
                       clusMethod="ward.D2"){
   if(class(x)!="hyperSpec"){

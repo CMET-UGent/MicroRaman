@@ -17,15 +17,14 @@ The SCA measures the angle between two vectors corresponding to closely
  (Wan *et al.* 2002).
 }
 \examples{
-## Short example
+# Load hyperSpec object
+data("hs.example")
 
-# Load and pretransform MassSpectrum object
-data("mass.spectra.baseline.corr")
-mass.spectra.baseline.corr <- wlcutter(mass.spectra.baseline.corr)
-mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
-# Convert to hyperSpec object
-hs.norm <- mq2hs(mq.norm)
-disst <- SCA(hs.norm@data$spc[1,],hs.norm@data$spc[2,])
+# Convert to MassSpectrum object
+hs.x.proc <- hs_preprocess(hs.x)
+
+# Calc SCA
+disst <- SCA(hs.x.proc@data$spc[1,], hs.x.proc@data$spc[2,])
 }
 \references{
 Wan, K. X., Vidavsky, I., & Gross, M. L. (2002). Comparing similar spectra: from similarity index to spectral contrast angle. Journal of the American Society for Mass Spectrometry, 13(1), 85-88.

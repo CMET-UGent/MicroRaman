@@ -10,32 +10,31 @@
 #' @return a distance object containing the SCA between each cell
 #' @references Wan, K. X., Vidavsky, I., & Gross, M. L. (2002). Comparing similar spectra: from similarity index to spectral contrast angle. Journal of the American Society for Mass Spectrometry, 13(1), 85-88.
 #' @examples
-#' ## Short example
+#' # Load hyperSpec object
+#' data("hs.example")
 #'
-#' # Load and pretransform MassSpectrum object
-#' data("mass.spectra.baseline.corr")
-#' mass.spectra.baseline.corr <- wlcutter(mass.spectra.baseline.corr)
-#' mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
-#' # Convert to hyperSpec object
-#' hs.norm <- mq2hs(mq.norm)
-#' disst <- SCA.diss(hs.norm)
+#' # Convert to MassSpectrum object
+#' hs.x.proc <- hs_preprocess(hs.x)
+#'
+#' # cluster cells
+#' disst <- hs_SCAdiss(hs.x.proc)
 #' @export
 
-SCA.diss <- function(x){
-  if(!class(x)=="hyperSpec"){
+hs_SCAdiss <- function(hs.x) {
+  if (!class(x) == "hyperSpec") {
     stop("You did not supply a valid hyperSpec object, and there is no default.")
   }
-  matr <- x@data$spc
-  diss <- matrix( nrow = nrow(matr), ncol = nrow(matr))
+  matr <- hs.x@data$spc
+  diss <- matrix(nrow = nrow(matr), ncol = nrow(matr))
   # there has to be a way to get rid of this double for-loop
   # TODO: have a look at cov and see how it's done there (apparently with C calls)
-  for (i in 1:nrow(matr)){
+  for (i in 1:nrow(matr)) {
     for (j in 1:nrow(matr)) {
-      diss[i,j] <- SCA(matr[i,], matr[j,])
+      diss[i, j] <- SCA(matr[i, ], matr[j, ])
     }
   }
-  row.names(diss) <- rownames(x@data$spc)
+  row.names(diss) <- rownames(hs.x@data$spc)
   diss <- as.dist(diss)
-  attr(diss, "method") <- "SCA.diss"
+  attr(diss, "method") <- "hs_SCAdiss"
   return(diss)
 }

@@ -17,9 +17,6 @@ before_deploy:
 
 after_success:
   - Rscript -e 'covr::codecov()'
-
-r_github_packages:
-  - zmzhang/baselinewavelet
   
 r_check_args: "--no-vignettes"
   

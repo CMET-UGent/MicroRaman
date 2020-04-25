@@ -8,6 +8,8 @@ hs_tsne(hs.x, ...)
 }
 \arguments{
 \item{hs.x}{hyperSpec object or alternatively distance matrix}
+
+\item{...}{Parameters to pass on to tsne().}
 }
 \description{
 Run tSNE on a hyperspec object

@@ -1,7 +1,7 @@
 #' Run PCA on a hyperspec object
 #'
 #' @param hs.x hyperSpec object
-#' @param scale Whether scaling should be applied to the data (centering + scaling)
+#' @param ... Parameters to pass on to prcomp().
 #' @importFrom stats prcomp
 #' @examples
 #' ## Short example

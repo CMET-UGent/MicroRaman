@@ -1,6 +1,7 @@
 #' Run tSNE on a hyperspec object
 #'
 #' @param hs.x hyperSpec object or alternatively distance matrix
+#' @param ... Parameters to pass on to tsne().
 #' @importFrom tsne tsne
 #' @examples
 #' ## Short example

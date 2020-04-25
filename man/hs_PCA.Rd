@@ -9,7 +9,7 @@ hs_PCA(hs.x, ...)
 \arguments{
 \item{hs.x}{hyperSpec object}
 
-\item{scale}{Whether scaling should be applied to the data (centering + scaling)}
+\item{...}{Parameters to pass on to prcomp().}
 }
 \description{
 Run PCA on a hyperspec object

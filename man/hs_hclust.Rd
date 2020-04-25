@@ -7,7 +7,8 @@
 hs_hclust(
   hs.x,
   dist_method = "bray",
-  clust_method = c("hclust", "pvclust"),
+  clust_method = "pvclust",
+  aggl_method = "ward.D2",
   nboot = 1000,
   ...
 )
@@ -21,11 +22,13 @@ hs_hclust(
 
 \item{clust_method}{Choose regular hierarchical clustering or bootstrap supported hierarchical clustering with pvclust}
 
+\item{aggl_method}{the agglomerative method used in hierarchical clustering. This should be (an abbreviation of) one of "average", "ward.D", "ward.D2", "single", "complete", "mcquitty", "median" or "centroid". The default is "average".}
+
 \item{nboot}{Numnber of bootstraps for pvclust. Defaults to 1000.}
 
 \item{...}{Parameters to pass on to hclust().}
 
-\item{method.hclust}{Clustering method to use for pvclust. Defaults to "ward.D2".}
+\item{method.hclust}{Clustering method to use for pvclust. Either hclust or pvclust. Defaults to "pvclust"..}
 }
 \description{
 Perform hierarchical clustering on Raman spectra

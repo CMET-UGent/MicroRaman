@@ -25,25 +25,25 @@ Functions  | Actions
 ------------| -----------
 hs_import | Import Thermo Galactic's spc file format data into the R environment
 hs_preprocess | Preprocesses the data using the Garcia-Timermans et al. (2020) workflow
-hs_contrast | Calculate contrasts between spectra of specified groups of cells.
-hs_hclust |
-hs_hclust_cutoff |
-hs_PCA |
-hs_phenoRam |
-hs_tsne |
-hs_SCA_conv_itol |
+hs_contrast | Calculate contrasts between spectra of specified groups of cells
+hs_hclust | Hierarchical clustering of Raman spectra (with or without bootstrap support)
+hs_hclust_cutoff | Visualization of distance cut-off in hclust plots
+hs_PCA | Principal Component Analysis of Raman spectra
+hs_tsne | t-distributed stochastic neighbor embedding of Raman spectra 
+hs_phenoRam | Calculation of Hill diversity numbers for each individual Raman spectrum
 hs_SCAdiss | Calculates the spectral contrast angle (SCA) between all cells in a hyperSpec object
+hs_SCA_conv_itol | Convert SCA dissimilarity matrix to itol-compatible object
 
 ## Convenience functions
 Functions  | Actions
 ------------| -----------
 hs_conv_mq | converts a `hyperSpec::hyperSpec` object directly to a `MALDIquant::MassSpectrum` object
 mq_conv_hs | converts a `MALDIquant::MassSpectrum` object directly to a `hyperSpec::hyperSpec` object
-intervalplot |
-model_fit_stats |
+mq_plot |
 mq_baseline_plot |
 mq_iter_plot |
-mq_plot |
+intervalplot |
+model_fit_stats |
 pred_r_squared |
 PRESS |
 SCA | Calculates the spectral contrast angle between two vectors

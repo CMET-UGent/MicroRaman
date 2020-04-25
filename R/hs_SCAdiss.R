@@ -21,7 +21,7 @@
 #' @export
 
 hs_SCAdiss <- function(hs.x) {
-  if (!class(x) == "hyperSpec") {
+  if (!class(hs.x) == "hyperSpec") {
     stop("You did not supply a valid hyperSpec object, and there is no default.")
   }
   matr <- hs.x@data$spc

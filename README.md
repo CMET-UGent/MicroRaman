@@ -53,7 +53,7 @@ PRESS | | NO
 SCA | Calculates the spectral contrast angle between two vectors | YES
 wlcutter | | NO
 
-## Avaiable datasets
+## Available datasets
 
 Some datasets are included in the package. They allow the examples and vigenttes
 to be run. They can be loaded using:

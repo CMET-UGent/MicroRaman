@@ -13,6 +13,8 @@ If you use this package, please consider citing the original publication in whic
 
 García-Timermans, C., Rubbens, P., Kerckhof, F. M., Buysschaert, B., Khalenkow, D., Waegeman, W., Skirtach, A. G. & Boon, N. (2018). Label-free Raman characterization of bacteria calls for standardized procedures. Journal of microbiological methods, 151, 69-75.
 
+García‐Timermans, C., Rubbens, P., Heyse, J., Kerckhof, F.‐M., Props, R., Skirtach, A.G., Waegeman, W. and Boon, N. (2020), Discriminating Bacterial Phenotypes at the Population and Single‐Cell Level: A Comparison of Flow Cytometry and Raman Spectroscopy Fingerprinting. Cytometry. doi:10.1002/cyto.a.23952
+
 Install the package:
 ```R
 library("devtools")

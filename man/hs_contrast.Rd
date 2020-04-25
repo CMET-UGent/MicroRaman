@@ -7,35 +7,25 @@
 hs_contrast(hs.x, comp1, comp2, plot = TRUE)
 }
 \arguments{
-\item{hs.x}{a hyperspec object}
+\item{hs.x}{a hyperSpec object}
 
-\item{comp1}{character vector with sample names from one side of the comparisons}
+\item{comp1}{numeric (any length) or boolean (TRUE/FALSE - length equal to number of spectra in hs.x) vector
+with sample names from one side of the comparisons}
 
-\item{comp2}{character vector with sample names from the other side of the comparisons}
+\item{comp2}{numeric (any length) or boolean (TRUE/FALSE - length equal to number of spectra in hs.x) vector
+with sample names from the other side of the comparisons}
 
 \item{plot}{a logical indicating whether or not the constrasts should be plotted (defaults to TRUE)}
 }
 \value{
-a ggplot2 object with the contrast plot
+a dataframe containing the contrast values between the averaged spectra
 }
 \description{
-A way to visualize contrasts between Raman spectra from different samples an existing hyperSpec object
+A way to visualize contrasts between Raman spectra from different samples in an
+ existing hyperSpec object
 }
 \examples{
 ## Short example
-### Load and pretransform MassSpectrum object
-data("mass.spectra.baseline.corr")
-data("spx.all")
-mdqs <- lapply(spx.all,hs2mq)
-labels <-  sub(pattern = ".*/(.*.spc)","\\\\1",
-x =sapply(mdqs,function(x)x@metaData$name))
-Medium <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[2])))
-Replicate <- unlist(lapply(strsplit(labels,split="_"),function(x) (x[3])))
-smpnms <- paste(Medium,Replicate)
-mass.spectra.baseline.corr <- wlcutter(mass.spectra.baseline.corr)
-mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
-### Convert to hyperSpec object
-hs.norm <- mq2hs(mq.norm,sampleNames=smpnms)
-hs_contrast(hs.x = hs.norm, comp1 = c("LB rep1", "LB rep2", "LB rep3"),
-comp2 = c("NB rep1","NB rep2","NB rep3"))
+
+hs.cont <- hs_contrast(hs.x.proc, comp1 = c(1:4), comp2 = c(8:20))
 }

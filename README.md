@@ -27,7 +27,7 @@ Functions  | Actions | Functional
 ------------ | ----------- | -----------
 hs_import | Import Thermo Galactic's spc file format data into the R environment | YES
 hs_preprocess | Preprocesses the data using the Garcia-Timermans et al. (2020) workflow | YES
-hs_contrast | Calculate contrasts between spectra of specified groups of cells | NO
+hs_contrast | Calculate contrasts between spectra of specified groups of cells | YES
 hs_hclust | Hierarchical clustering of Raman spectra (with or without bootstrap support) | YES
 hs_hclust_cutoff | Visualization of distance cut-off in hclust plots | YES
 hs_type | Clusters spectra using partitioning around medoids  | YES

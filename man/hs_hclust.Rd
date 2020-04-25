@@ -4,7 +4,13 @@
 \alias{hs_hclust}
 \title{Perform hierarchical clustering on Raman spectra}
 \usage{
-hs_hclust(hs.x, dist_method = "bray", ...)
+hs_hclust(
+  hs.x,
+  dist_method = "bray",
+  clust_method = c("hclust", "pvclust"),
+  nboot = 1000,
+  ...
+)
 }
 \arguments{
 \item{hs.x}{hyperSpec object}
@@ -13,7 +19,13 @@ hs_hclust(hs.x, dist_method = "bray", ...)
 "bray", "kulczynski", "jaccard", "gower", "altGower", "morisita", "horn",
 "mountford", "raup", "binomial", "chao", "cao" or "mahalanobis".}
 
+\item{clust_method}{Choose regular hierarchical clustering or bootstrap supported hierarchical clustering with pvclust}
+
+\item{nboot}{Numnber of bootstraps for pvclust. Defaults to 1000.}
+
 \item{...}{Parameters to pass on to hclust().}
+
+\item{method.hclust}{Clustering method to use for pvclust. Defaults to "ward.D2".}
 }
 \description{
 Perform hierarchical clustering on Raman spectra

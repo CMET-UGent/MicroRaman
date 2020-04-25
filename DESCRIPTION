@@ -19,6 +19,7 @@ Imports:
     e1071,
     rgl,
     readxl,
+    pvclust,
     openxlsx,
     plotrix,
     reshape2,

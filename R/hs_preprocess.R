@@ -17,7 +17,7 @@
 #' data("hs.example")
 #'
 #' # Load hyperSpec object
-#' hs.x.proc <- hs_preprocess(hs.x = hs.example, smooth = TRUE)
+#' hs.x.proc <- hs_preprocess(hs.x = hs.x, smooth = FALSE)
 #' @export
 
 hs_preprocess <- function(hs.x,
@@ -30,8 +30,8 @@ hs_preprocess <- function(hs.x,
 
   # Options
   hy.setOptions(file.keep.name = TRUE)
-  dev.off()
-  par(mfrow = c(2, 2))
+  # dev.off()
+  par(mfrow = c(1, 1))
 
   # Load data if path is given
   if (!is.null(path)) {
@@ -40,6 +40,7 @@ hs_preprocess <- function(hs.x,
 
   # Preprocess data according to Garcia-Timermans et al. (2020)
   if (smooth) {
+    par(mfrow = c(2, 2))
     # Smooth spectra
     hs.x <- spc.loess(hs.x, c(seq (0, hs.x@wavelength[length(hs.x@wavelength)])))
     plot(hs.x)
@@ -56,7 +57,7 @@ hs_preprocess <- function(hs.x,
   # BASELINE CORRECTION
   plot(
     mq.trim[[1]],
-    main = "SNIP baseline correction",
+    main = "SNIP pre-baseline correction",
     xlab = expression("Wavenumber (cm" ^ -1 * ")"),
     ylab = "Intensity (AU)",
     ylim = c(min(intensity(mq.trim[[1]])), max(intensity(mq.trim[[1]])))
@@ -70,13 +71,13 @@ hs_preprocess <- function(hs.x,
   # plot a spectrum to see the effect
   plot(
     mass.spectra.baseline.corr[[1]],
-    main = "SNIP baseline correction",
+    main = "SNIP post-baseline correction",
     xlab = expression("Wavenumber (cm" ^ -1 * ")") ,
     ylab = "Intensity (AU)",
     ylim = c(min(intensity(
-      mass.spectra.baseline.corr[[i]]
+      mass.spectra.baseline.corr[[1]]
     )), max(intensity(
-      mass.spectra.baseline.corr[[i]]
+      mass.spectra.baseline.corr[[1]]
     )))
   )
 
@@ -93,7 +94,7 @@ hs_preprocess <- function(hs.x,
     main = "Normalization",
     xlab = expression("Wavenumber (cm" ^ -1 * ")") ,
     ylab = "Intensity (AU)",
-    ylim = c(min(intensity(mq.norm[[i]])), max(intensity(mq.norm[[i]])))
+    ylim = c(min(intensity(mq.norm[[1]])), max(intensity(mq.norm[[1]])))
   )
 
   # Aligned spectra

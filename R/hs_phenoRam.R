@@ -41,13 +41,15 @@ hs_phenoRam <- function(hs.x,
 
   # Load data if path is given
   # Preprocess data according to Garcia-Timermans et al. (2020)
-  hs.x <- hs_preprocess(hs.x,
-    smooth = smooth,
-    align = align,
-    path = path,
-    pattern = pattern,
-    trim.range = c(400, 1800),
-    niter = 10)
+  if(preprocess){
+    hs.x <- hs_preprocess(hs.x,
+      smooth = smooth,
+      align = align,
+      path = path,
+      pattern = pattern,
+      trim.range = c(400, 1800),
+      niter = 10)
+  }
 
   # Peak detection algorithm
   if (peak_detection) {

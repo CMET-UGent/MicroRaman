@@ -35,9 +35,9 @@ hs_PCA | Principal Component Analysis of Raman spectra | YES
 hs_tsne | t-distributed stochastic neighbor embedding of Raman spectra  | YES
 hs_phenoRam | Calculation of Hill diversity numbers for each individual Raman spectrum | YES
 hs_RF | Train Random Forest classifier to distinguish between groups of cells | YES
-hs_RF_pred | Predict using Random Forest classifier on new data | NO
+hs_RF_pred | Predict using Random Forest classifier on new data | YES
 hs_SCAdiss | Calculates the spectral contrast angle (SCA) between all cells in a hyperSpec object | YES
-hs_SCA_conv_itol | Convert SCA dissimilarity matrix to itol-compatible object | NO
+
 
 ## Convenience functions
 Functions  | Actions | Functional
@@ -45,6 +45,7 @@ Functions  | Actions | Functional
 hs_conv_mq | Converts a `hyperSpec::hyperSpec` object directly to a `MALDIquant::MassSpectrum` object | YES
 mq_conv_hs | Converts a `MALDIquant::MassSpectrum` object directly to a `hyperSpec::hyperSpec` object | YES
 hs_tidy_filenames | Tidies up hyperspec spectral IDs | YES
+hs_SCA_conv_itol | Convert SCA dissimilarity matrix to itol-compatible object | NO
 mq_plot | | NO
 mq_baseline_plot | | NO
 mq_iter_plot | | NO

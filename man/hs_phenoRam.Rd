@@ -44,9 +44,12 @@ hs_phenoRam(
 Calculate the phenotypic heterogeneity indices for each cell
 }
 \examples{
+# Short example
+data("hs_example")
 
-## Short example
+# Preprocess
+hs_example <- hs_preprocess(hs_example)
 
-# Load hyperSpec object
-hs_phenoRam(hs.x = hs.x, preprocess = TRUE, peak_detection = TRUE)
+# Calculate metrics
+hs_phenoRam(hs.x = hs_example, preprocess = TRUE, peak_detection = TRUE)
 }

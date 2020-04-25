@@ -17,8 +17,8 @@ MALDIquant::MassSpectrum object for downstream processing.
 ## Short example
 
 # Load hyperSpec object
-data("hs.example")
+data("hs_example")
 
 # Convert to MassSpectrum object
-mq.x <- hs_conv_mq(hs.example)
+mq.x <- hs_conv_mq(hs_example)
 }

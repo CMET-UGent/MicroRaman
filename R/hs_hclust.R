@@ -16,10 +16,10 @@
 #' ## Short example
 #'
 #' # Load hyperSpec object
-#' data("hs.example")
+#' data("hs_example")
 #'
 #' # Preprocess spectra
-#' hs.x.proc <- hs_preprocess(hs.x)
+#' hs.x.proc <- hs_preprocess(hs_example)
 #'
 #' hclust_obj <- hs_hclust(hs.x.proc)
 #' @export

@@ -18,10 +18,10 @@ Run PCA on a hyperspec object
 ## Short example
 
 # Load hyperSpec object
-data("hs.example")
+data("hs_example")
 
 # Convert to MassSpectrum object
-hs.x.proc <- hs_preprocess(hs.x)
+hs.x.proc <- hs_preprocess(hs_example)
 
 df.PCA <- hs_PCA(hs.x.proc)
 }

@@ -8,10 +8,10 @@
 #' @importFrom methods new
 #' @examples
 #' # Load hyperSpec object
-#' data("hs.example")
+#' data("hs_example")
 #'
 #' # Convert to MassSpectrum object
-#' mq.x <- hs_conv_mq(hs.example)
+#' mq.x <- hs_conv_mq(hs_example)
 #'
 #' # Convert to hyperspec object
 #' hs.x <- mq_conv_hs(mq.x)

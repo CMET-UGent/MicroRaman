@@ -26,6 +26,11 @@ A way to visualize contrasts between Raman spectra from different samples in an
 }
 \examples{
 ## Short example
+data("hs_example")
 
-hs.cont <- hs_contrast(hs.x.proc, comp1 = c(1:4), comp2 = c(8:20))
+# Preprocess
+hs_example <- hs_preprocess(hs_example)
+
+# Run contrast comparison
+hs.cont <- hs_contrast(hs_example, comp1 = c(1:4), comp2 = c(8:20))
 }

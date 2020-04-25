@@ -13,10 +13,10 @@
 #' @importFrom dplyr left_join
 #' @keywords hyperspec rename
 #' @examples
-#' data("hs.example")
+#' data("hs_example")
 #'
 #' # Remove path from spectral ID
-#' hs_tidy_filenames(hs.x, remove_pattern = "path")
+#' hs_tidy_filenames(hs_example, remove_pattern = "path")
 #'
 #' @export
 

@@ -31,10 +31,10 @@ column (old_name_col) and new filename column (new_name_col).}
 Function to tidy/clean filenames in hyperspec objects (i.e. remove absolute path in name, and/or replace filenames).
 }
 \examples{
-data("hs.example")
+data("hs_example")
 
 # Remove path from spectral ID
-hs_tidy_filenames(hs.x, remove_pattern = "path")
+hs_tidy_filenames(hs_example, remove_pattern = "path")
 
 }
 \keyword{hyperspec}

@@ -11,10 +11,10 @@
 #' ## Short example
 #'
 #' # Load hyperSpec object
-#' data("hs.example")
+#' data("hs_example")
 #'
 #' # Convert to MassSpectrum object
-#' hs.x.proc <- hs_preprocess(hs.x)
+#' hs.x.proc <- hs_preprocess(hs_example)
 #'
 #' hclust_obj <- hs_type(hs.x.proc, PCA.var = 0.8)
 #' @export

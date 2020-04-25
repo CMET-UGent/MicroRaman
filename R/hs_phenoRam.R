@@ -16,11 +16,14 @@
 #' @importFrom graphics lines legend plot
 #' @importFrom hyperSpec hy.setOptions spc.loess orderwl
 #' @examples
+#' # Short example
+#' data("hs_example")
 #'
-#' ## Short example
+#' # Preprocess
+#' hs_example <- hs_preprocess(hs_example)
 #'
-#' # Load hyperSpec object
-#' hs_phenoRam(hs.x = hs.x, preprocess = TRUE, peak_detection = TRUE)
+#' # Calculate metrics
+#' hs_phenoRam(hs.x = hs_example, preprocess = TRUE, peak_detection = TRUE)
 #' @export
 #'
 hs_phenoRam <- function(hs.x,

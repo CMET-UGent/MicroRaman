@@ -13,8 +13,13 @@
 #' @importFrom ggplot2 geom_line ggplot geom_point scale_fill_distiller theme_bw
 #' @examples
 #' ## Short example
+#' data("hs_example")
 #'
-#' hs.cont <- hs_contrast(hs.x.proc, comp1 = c(1:4), comp2 = c(8:20))
+#' # Preprocess
+#' hs_example <- hs_preprocess(hs_example)
+#'
+#' # Run contrast comparison
+#' hs.cont <- hs_contrast(hs_example, comp1 = c(1:4), comp2 = c(8:20))
 #' @export
 
 hs_contrast <- function(hs.x, comp1, comp2, plot = TRUE) {

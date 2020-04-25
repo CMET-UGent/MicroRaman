@@ -28,9 +28,12 @@ hs_preprocess | Preprocesses the data using the Garcia-Timermans et al. (2020) w
 hs_contrast | Calculate contrasts between spectra of specified groups of cells | NO
 hs_hclust | Hierarchical clustering of Raman spectra (with or without bootstrap support) | YES
 hs_hclust_cutoff | Visualization of distance cut-off in hclust plots | YES
+hs_type | Clusters spectra using partitioning around medoids  | NO
 hs_PCA | Principal Component Analysis of Raman spectra | YES
 hs_tsne | t-distributed stochastic neighbor embedding of Raman spectra  | YES
 hs_phenoRam | Calculation of Hill diversity numbers for each individual Raman spectrum | YES
+hs_RF | Train Random Forest classifier to distinguish between groups of cells | NO
+hs_RF_pred | Predict using Random Forest classifier on new data | NO
 hs_SCAdiss | Calculates the spectral contrast angle (SCA) between all cells in a hyperSpec object | YES
 hs_SCA_conv_itol | Convert SCA dissimilarity matrix to itol-compatible object | NO
 

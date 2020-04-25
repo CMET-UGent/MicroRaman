@@ -23,7 +23,7 @@ install_github("CMET-UGent/MicroRaman")
 
 ## Core functions
 
-Functions  | Actions | Functional
+Functions  | Description | Functional?
 ------------ | ----------- | -----------
 hs_import | Import Thermo Galactic's spc file format data into the R environment | YES
 hs_preprocess | Preprocesses the data using the Garcia-Timermans et al. (2020) workflow | YES
@@ -40,7 +40,7 @@ hs_SCAdiss | Calculates the spectral contrast angle (SCA) between all cells in a
 
 
 ## Convenience functions
-Functions  | Actions | Functional
+Functions  | Description | Functional?
 ------------| ----------- | -----------
 hs_conv_mq | Converts a `hyperSpec::hyperSpec` object directly to a `MALDIquant::MassSpectrum` object | YES
 mq_conv_hs | Converts a `MALDIquant::MassSpectrum` object directly to a `hyperSpec::hyperSpec` object | YES

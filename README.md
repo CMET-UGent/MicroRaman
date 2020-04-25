@@ -37,8 +37,9 @@ hs_SCA_conv_itol | Convert SCA dissimilarity matrix to itol-compatible object | 
 ## Convenience functions
 Functions  | Actions | Functional
 ------------| ----------- | -----------
-hs_conv_mq | converts a `hyperSpec::hyperSpec` object directly to a `MALDIquant::MassSpectrum` object | YES
-mq_conv_hs | converts a `MALDIquant::MassSpectrum` object directly to a `hyperSpec::hyperSpec` object | YES
+hs_conv_mq | Converts a `hyperSpec::hyperSpec` object directly to a `MALDIquant::MassSpectrum` object | YES
+mq_conv_hs | Converts a `MALDIquant::MassSpectrum` object directly to a `hyperSpec::hyperSpec` object | YES
+hs_tidy_filenames | Tidies up hyperspec spectral IDs | YES
 mq_plot | | NO
 mq_baseline_plot | | NO
 mq_iter_plot | | NO

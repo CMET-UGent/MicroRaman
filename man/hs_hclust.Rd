@@ -27,5 +27,5 @@ data("hs.example")
 # Convert to MassSpectrum object
 hs.x.proc <- hs_preprocess(hs.x)
 
-hs_hclust <- hs_hclust(hs.x.proc)
+hclust_obj <- hs_hclust(hs.x.proc)
 }

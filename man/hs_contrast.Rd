@@ -4,10 +4,10 @@
 \alias{hs_contrast}
 \title{Contrast plot for Raman spectra}
 \usage{
-hs_contrast(hyprs, comp1, comp2, plot = TRUE)
+hs_contrast(hs.x, comp1, comp2, plot = TRUE)
 }
 \arguments{
-\item{hyprs}{a hyperspec object}
+\item{hs.x}{a hyperspec object}
 
 \item{comp1}{character vector with sample names from one side of the comparisons}
 
@@ -36,6 +36,6 @@ mass.spectra.baseline.corr <- wlcutter(mass.spectra.baseline.corr)
 mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
 ### Convert to hyperSpec object
 hs.norm <- mq2hs(mq.norm,sampleNames=smpnms)
-hs_contrast(hyprs = hs.norm, comp1 = c("LB rep1", "LB rep2", "LB rep3"),
+hs_contrast(hs.x = hs.norm, comp1 = c("LB rep1", "LB rep2", "LB rep3"),
 comp2 = c("NB rep1","NB rep2","NB rep3"))
 }

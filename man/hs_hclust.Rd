@@ -18,7 +18,7 @@ hs_hclust(
 
 \item{dist_method}{Dissimilarity index, partial match to "manhattan", "euclidean", "canberra", "clark",
 "bray", "kulczynski", "jaccard", "gower", "altGower", "morisita", "horn",
-"mountford", "raup", "binomial", "chao", "cao" or "mahalanobis".}
+"mountford", "raup", "binomial", "chao", "cao" or "mahalanobis". Can be specified to "SCA" for Raman data.}
 
 \item{clust_method}{Choose regular hierarchical clustering or bootstrap supported hierarchical clustering with pvclust}
 
@@ -39,7 +39,7 @@ Perform hierarchical clustering on Raman spectra
 # Load hyperSpec object
 data("hs.example")
 
-# Convert to MassSpectrum object
+# Preprocess spectra
 hs.x.proc <- hs_preprocess(hs.x)
 
 hclust_obj <- hs_hclust(hs.x.proc)

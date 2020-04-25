@@ -21,18 +21,18 @@ install_github("CMET-UGent/MicroRaman")
 
 ## Core functions
 
-Functions  | Actions
-------------| -----------
-hs_import | Import Thermo Galactic's spc file format data into the R environment
-hs_preprocess | Preprocesses the data using the Garcia-Timermans et al. (2020) workflow
-hs_contrast | Calculate contrasts between spectra of specified groups of cells
-hs_hclust | Hierarchical clustering of Raman spectra (with or without bootstrap support)
-hs_hclust_cutoff | Visualization of distance cut-off in hclust plots
-hs_PCA | Principal Component Analysis of Raman spectra
-hs_tsne | t-distributed stochastic neighbor embedding of Raman spectra 
-hs_phenoRam | Calculation of Hill diversity numbers for each individual Raman spectrum
-hs_SCAdiss | Calculates the spectral contrast angle (SCA) between all cells in a hyperSpec object
-hs_SCA_conv_itol | Convert SCA dissimilarity matrix to itol-compatible object
+Functions  | Actions | Functional
+------------ | ----------- | -----------
+hs_import | Import Thermo Galactic's spc file format data into the R environment | YES
+hs_preprocess | Preprocesses the data using the Garcia-Timermans et al. (2020) workflow | YES
+hs_contrast | Calculate contrasts between spectra of specified groups of cells | NO
+hs_hclust | Hierarchical clustering of Raman spectra (with or without bootstrap support) | YES
+hs_hclust_cutoff | Visualization of distance cut-off in hclust plots | YES
+hs_PCA | Principal Component Analysis of Raman spectra | YES
+hs_tsne | t-distributed stochastic neighbor embedding of Raman spectra  | YES
+hs_phenoRam | Calculation of Hill diversity numbers for each individual Raman spectrum | YES
+hs_SCAdiss | Calculates the spectral contrast angle (SCA) between all cells in a hyperSpec object | YES
+hs_SCA_conv_itol | Convert SCA dissimilarity matrix to itol-compatible object | NO
 
 ## Convenience functions
 Functions  | Actions

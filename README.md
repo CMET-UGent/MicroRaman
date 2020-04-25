@@ -2,11 +2,14 @@
 
 # MicroRaman
 *******************
-- **Authors**: [Frederiek-Maarten Kerchkof](mailto:FrederiekMaarten.Kerckhof@UGent.be), [Benjamin Buysschaert](mailto:Benjamin.Buysschaert@Ugent.be), [Dmitry Khalenkow](mailto:Dmitry.Khalenkow@Ugent.be), [Jasmine Heyse](mailto:Jasmine.Heyse@ugent.be), [Ruben Props](mailto:Ruben.Props@ugent.be) and [Cristina Garcia Timermans](mailto:Cristina.GarciaTimermans@ugent.be).
+- **Authors**: [Frederiek-Maarten Kerchkof](mailto:FrederiekMaarten.Kerckhof@UGent.be), [Cristina Garcia Timermans](mailto:Cristina.GarciaTimermans@ugent.be), and [Ruben Props](mailto:Ruben.Props@ugent.be).
 
-The goal of this package is to provide a standardized and automated workflow for spectral analysis in a fast and objective way, removing the post-processing bias of different operators. 
+- **Contributors**:
+[Benjamin Buysschaert](mailto:Benjamin.Buysschaert@Ugent.be) and [Jasmine Heyse](mailto:Jasmine.Heyse@ugent.be) 
 
-If you use this package, please consider citing the original publication:  
+The goal of this package is to provide a standardized and automated workflow for Raman spectra analysis. 
+
+If you use this package, please consider citing the original publication in which is was first used:  
 
 García-Timermans, C., Rubbens, P., Kerckhof, F. M., Buysschaert, B., Khalenkow, D., Waegeman, W., Skirtach, A. G. & Boon, N. (2018). Label-free Raman characterization of bacteria calls for standardized procedures. Journal of microbiological methods, 151, 69-75.
 
@@ -16,22 +19,35 @@ library("devtools")
 install_github("CMET-UGent/MicroRaman")
 ```
 
-## Available functions
+## Core functions
 
 Functions  | Actions
 ------------| -----------
-baselinecorrplot | plot the result of optimal baseline correction
-hs2mq | converts a `hyperSpec::hyperSpec` object directly to a `MALDIquant::MassSpectrum` object
-intervalplot | plotting function that shows if (trimmed) wavelengths are evenly spaced
-iterationsplot | plot the effect of iterations on baseline correction
-grid_arrange_shared_legend | Function for creating a common legend for 2 ggplot2 figures.
-iterationsplot | plots baseline correction for several iterations on the spectral data to determine the optimal number of iterations
-mq2hs | Convert a MassSpectrum object to a hyperSpec object
-ramplot | Convenience function to plot Raman spectra (from `MALDIquant::MassSpectrum`)
-SCA | calculates the spectral contracst angle between two vectors
-SCA.diss | calculates the spectral contrast angle (SCA) between all cells in a hyperSpec object
-wlcutter | Set intensities of a given bandpass to a defined value (anomalous peak removal)
+hs_import | Import Thermo Galactic's spc file format data into the R environment
+hs_preprocess | Preprocesses the data using the Garcia-Timermans et al. (2020) workflow
+hs_contrast | Calculate contrasts between spectra of specified groups of cells.
+hs_hclust |
+hs_hclust_cutoff |
+hs_PCA |
+hs_phenoRam |
+hs_tsne |
+hs_SCA_conv_itol |
+hs_SCAdiss | Calculates the spectral contrast angle (SCA) between all cells in a hyperSpec object
 
+## Convenience functions
+Functions  | Actions
+------------| -----------
+hs_conv_mq | converts a `hyperSpec::hyperSpec` object directly to a `MALDIquant::MassSpectrum` object
+mq_conv_hs | converts a `MALDIquant::MassSpectrum` object directly to a `hyperSpec::hyperSpec` object
+intervalplot |
+model_fit_stats |
+mq_baseline_plot |
+mq_iter_plot |
+mq_plot |
+pred_r_squared |
+PRESS |
+SCA | Calculates the spectral contrast angle between two vectors
+wlcutter |
 
 ## Avaiable datasets
 

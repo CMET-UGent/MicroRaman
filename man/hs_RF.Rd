@@ -10,7 +10,8 @@ hs_RF(
   target_var,
   spectrumID_col,
   ntree = 500,
-  ptrain = 0.75,
+  p_train = 0.75,
+  metric = "Accuracy",
   ...
 )
 }
@@ -27,7 +28,9 @@ in metadata}
 
 \item{ntree}{Number of trees to build. Defaults to 500.}
 
-\item{ptrain}{Percentage of data to use in training model. Defaults to 0.75.}
+\item{p_train}{Percentage of data to use in training model. Defaults to 0.75.}
+
+\item{metric}{Metric to use to report/maximize performance of model (only for method_ML = "rf")}
 }
 \description{
 Train random forest model on hyperspec object
@@ -40,9 +43,19 @@ data("hs_example")
 hs_example <- hs_preprocess(hs_example)
 
 # Mock-up metadata
-mock_meta <- metadata
+mock_meta <- data.frame(Spectrum_ID = rownames(hs_example@data$spc),
+group = factor(c(rep(1,30),rep(2,34))))
 
 # Calculate metrics
-hs_RF(hs.x = hs_example, metadata = metadata, spectrumID_col= "Spectrum_ID",
- target_var = "test_group")
+hs.RF <- hs_RF(hs.x = hs_example, metadata = metadata, spectrumID_col= "Spectrum_ID",
+ target_var = "group")
+
+ # Trained model
+ print(hs.RF[[1]])
+
+ # Confusion matrix
+ print(hs.RF[[2]])
+
+ # Variable importance metric
+ caret::varImp(hs.RF[[1]])
 }

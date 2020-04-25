@@ -31,12 +31,12 @@ hs_tidy_filenames <- function(hs.x,
       hs.x@data$filename <-
         gsub(pattern = ".*/",
           replacement = "",
-          x = spectra_ids)
+          x = hs.x@data$filename)
     }  else {
       rownames(hs.x@data$spc) <-
         gsub(pattern = ".*/",
           replacement = "",
-          x = spectra_ids)
+          x = rownames(hs.x@data$spc))
     }
   } else if (remove_pattern == "rename" && !is.null(rename_df)) {
     # Edit spectra IDs

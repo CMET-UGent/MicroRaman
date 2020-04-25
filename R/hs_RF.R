@@ -35,6 +35,9 @@
 #'
 #'  # Variable importance metric
 #'  caret::varImp(hs.RF[[1]])
+#'
+#'  # Perform predictions
+#'  hs_RF_pred(hs.x = hs_example, model = hs.RF[[1]])
 #' @export
 #'
 hs_RF <- function(hs.x,

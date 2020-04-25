@@ -58,4 +58,7 @@ hs.RF <- hs_RF(hs.x = hs_example, metadata = mock_meta, spectrumID_col= "Spectru
 
  # Variable importance metric
  caret::varImp(hs.RF[[1]])
+
+ # Perform predictions
+ hs_RF_pred(hs.x = hs_example, model = hs.RF[[1]])
 }

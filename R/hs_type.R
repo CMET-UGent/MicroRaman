@@ -1,4 +1,4 @@
-#' Perform clustering of cells using partitioning around medoids (PAM)
+#' Perform clustering of spectra using partitioning around medoids (PAM)
 #'
 #' Number of clusters is optimized based on Silhouette index.
 #' @param hs.x hyperSpec object

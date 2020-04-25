@@ -1,11 +1,11 @@
 Package: MicroRaman
 Type: Package
 Title: Phenotyping of microbial Raman spectroscopy data
-Version: 0.1.2
+Version: 0.2
 Authors@R: c(person("Frederiek-Maarten", "Kerckhof", email = "FrederiekMaarten.Kerckhof@UGent.be", role = c("aut", "cre")),
-             person("Benjamin", "Buysschaert", email = "Benjamin.Buysschaert@UGent.be", role = "ctb"),
-             person("Ruben", "Props", email = "Ruben.Props@UGent.be", role = "aut"),
-             person("Cristina", "Garcia-Timermans", email = "Cristina.GarciaTimermans@UGent.be", role = "aut")
+             person("Ruben", "Props", email = "Ruben.Props@UGent.be", role = c("aut")),
+             person("Cristina", "Garcia-Timermans", email = "Cristina.GarciaTimermans@UGent.be", role = "ctb"),
+             person("Jasmine", "Heyse", email = "Jasmine.Heyse@UGent.be", role = "ctb")
              )
 Maintainer: Frederiek-Maarten kerckhof <frederiekmaarten.kerckhof@ugent.be>
 Description: Set of functions to pre-process and phenotype microbial Raman spectroscopy data.
@@ -35,7 +35,6 @@ Imports:
     tidyr,
     fpc,
     tsne,
-    egg,
     sandwich,
     cluster,
     grid,

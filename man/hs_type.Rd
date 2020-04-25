@@ -2,7 +2,7 @@
 % Please edit documentation in R/hs_type.R
 \name{hs_type}
 \alias{hs_type}
-\title{Perform clustering of cells using partitioning around medoids (PAM)}
+\title{Perform clustering of spectra using partitioning around medoids (PAM)}
 \usage{
 hs_type(hs.x, PCA.var = NULL, ...)
 }

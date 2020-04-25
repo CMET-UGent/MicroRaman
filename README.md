@@ -66,5 +66,4 @@ data("<name of dataset>")
 
 Dataset name | Data contents
 -------------| ----------------
-mdqs | Raman spectrometry test single-cell data of Escherichia coli LMG2092 biological replicates (list of MALDIquant objects)
-spx.all | Hyperspec dataset (list of hyperSpec class objects) from single-cell data of *E. coli* LMG 2092 in triplicate in NB and LB test.
+hs_example | Hyperspec object contaning single-cell data of 64 GFP expressing yeast cells

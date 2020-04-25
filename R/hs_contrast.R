@@ -18,7 +18,6 @@
 #' @export
 
 hs_contrast <- function(hs.x, comp1, comp2, plot = TRUE) {
-
   if (is.null(hs.x) | class(hs.x) != "hyperSpec") {
     stop(
       "Error: you did not supply a valid hyperSpec object,
@@ -40,19 +39,20 @@ hs_contrast <- function(hs.x, comp1, comp2, plot = TRUE) {
   # Make contrasts
   max.total <- max(x)
   if (length(comp1) == 1 & length(comp2) == 1)
-    tmp <- (x[comp1,] - x[comp2,])
+    tmp <- (x[comp1, ] - x[comp2, ])
   if (length(comp1) == 1 & length(comp2) != 1)
-    tmp <- x[comp1,] - colMeans(x[comp2,])
+    tmp <- x[comp1, ] - colMeans(x[comp2, ])
   if (length(comp1) != 1 & length(comp2) == 1)
-    tmp <- colMeans(x[comp1,]) - x[comp2,]
+    tmp <- colMeans(x[comp1, ]) - x[comp2, ]
   if (length(comp1) != 1 & length(comp2) != 1)
-    tmp <- colMeans(x[comp1,]) - colMeans(x[comp2, ])
+    tmp <- colMeans(x[comp1, ]) - colMeans(x[comp2,])
 
   # normalize for max intensity in comparison
   tmp <- tmp / max.total
 
   # Results to dataframe
-  hs.contrast <- data.frame(Density = tmp, Wavenumber = hs.x@wavelength)
+  hs.contrast <-
+    data.frame(Density = tmp, Wavenumber = hs.x@wavelength)
 
   # Sanity check and plot
   # cat(paste0(

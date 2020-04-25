@@ -24,7 +24,7 @@
 #' group = factor(c(rep(1,30),rep(2,34))))
 #'
 #' # Calculate metrics
-#' hs.RF <- hs_RF(hs.x = hs_example, metadata = metadata, spectrumID_col= "Spectrum_ID",
+#' hs.RF <- hs_RF(hs.x = hs_example, metadata = mock_meta, spectrumID_col= "Spectrum_ID",
 #'  target_var = "group")
 #'
 #'  # Trained model

@@ -35,19 +35,19 @@ hs_SCAdiss | Calculates the spectral contrast angle (SCA) between all cells in a
 hs_SCA_conv_itol | Convert SCA dissimilarity matrix to itol-compatible object | NO
 
 ## Convenience functions
-Functions  | Actions
-------------| -----------
-hs_conv_mq | converts a `hyperSpec::hyperSpec` object directly to a `MALDIquant::MassSpectrum` object
-mq_conv_hs | converts a `MALDIquant::MassSpectrum` object directly to a `hyperSpec::hyperSpec` object
-mq_plot |
-mq_baseline_plot |
-mq_iter_plot |
-intervalplot |
-model_fit_stats |
-pred_r_squared |
-PRESS |
-SCA | Calculates the spectral contrast angle between two vectors
-wlcutter |
+Functions  | Actions | Functional
+------------| ----------- | -----------
+hs_conv_mq | converts a `hyperSpec::hyperSpec` object directly to a `MALDIquant::MassSpectrum` object | YES
+mq_conv_hs | converts a `MALDIquant::MassSpectrum` object directly to a `hyperSpec::hyperSpec` object | YES
+mq_plot | | NO
+mq_baseline_plot | | NO
+mq_iter_plot | | NO
+intervalplot | | NO
+model_fit_stats | | NO
+pred_r_squared | | NO
+PRESS | | NO
+SCA | Calculates the spectral contrast angle between two vectors | YES
+wlcutter | | NO
 
 ## Avaiable datasets
 

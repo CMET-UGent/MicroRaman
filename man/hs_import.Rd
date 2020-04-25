@@ -4,7 +4,7 @@
 \alias{hs_import}
 \title{Import Raman spectral data in the R environment}
 \usage{
-hs_import(path = NULL)
+hs_import(path = NULL, pattern = ".spc")
 }
 \arguments{
 \item{path}{path}

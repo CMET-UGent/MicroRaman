@@ -8,7 +8,7 @@
 #' hs.x <- hs_import(path = "")
 #' @export
 
-hs_import <- function(path = NULL) {
+hs_import <- function(path = NULL, pattern = ".spc") {
   hy.setOptions(file.keep.name = TRUE)
   # Sanity check
   if (is.null(path)) {

@@ -28,3 +28,5 @@ vignettes/*.pdf
 inst/doc
 old_data/
 test_data/
+doc
+Meta

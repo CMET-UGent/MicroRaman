@@ -1,0 +1,184 @@
+---
+title: "MicroRaman_demo"
+author: "Ruben Props"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    keep_md: yes
+    toc: yes
+    number_sections: true
+vignette: >
+  %\VignetteIndexEntry{MicroRaman_demo}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+editor_options:
+  chunk_output_type: console
+---
+
+
+```{r setup-1, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE, 
+                      echo = TRUE, 
+                      cache = FALSE, 
+                      include = TRUE, 
+                      collapse = FALSE, 
+                      dependson = NULL, 
+                      engine = "R", # Chunks will always have R code, unless noted
+                      error = TRUE,
+                      fig.align = "center"
+                      )
+```
+
+# Load library & data
+
+```{r}
+library("MicroRaman")
+# hs.x <- hs_import(path = "./test_data/")
+# summary(hs.x)
+
+# Load data from package
+data("hs_example")
+hs.x <- hs_example
+summary(hs.x)
+```
+
+# Tidy data
+
+```{r}
+# Spectra IDs contain full/absolute path 
+# This is annoying for downstream analysis
+# These can be shortened as such:
+head(hs.x@data$filename, 5)
+hs.x <- hs_tidy_filenames(hs.x, remove_pattern = "path")
+head(hs.x@data$filename, 5)
+```
+
+# Preprocess data
+
+```{r, fig.width=8, fig.height=5}
+# Denoise/clean
+hs.x.proc <- hs_preprocess(hs.x, smooth = FALSE)
+summary(hs.x.proc)
+
+# Resample if desired
+hs.x.proc.r <- hs_resample(hs.x.proc, sample = 20, replace = FALSE)
+summary(hs.x.proc.r)
+```
+
+# Contrast analysis
+
+```{r, fig.width=8, fig.height=5}
+# Make contrast between first 5 cell spectra and 50 other cell spectra
+hs.x.cont <- hs_contrast(hs.x.proc, comp1 = c(1:5), comp2 = c(10:60))
+head(hs.x.cont)
+```
+
+# PCA analysis
+
+```{r}
+hs.x.pca <- hs_PCA(hs.x.proc)
+head(hs.x.pca)
+```
+
+# Hierarchical clustering analysis
+
+```{r, fig.width=8, fig.height=6}
+# Cluster
+hs.x.hclust <- hs_hclust(hs.x.proc, clust_method = "hclust")
+summary(hs.x.hclust)
+
+# Draw tree
+plot(hs.x.hclust)
+
+# Draw cut-off
+hs_hclust_cutoff(hs.x.hclust, h = 0.5)
+```
+
+# Hierarchical clustering analysis with bootstrap support
+
+This bootstrap clustering takes some minutes to run, that's why it its commented out here.
+
+```{r}
+# Cluster
+# hs.x.pvclust <- hs_hclust(hs.x.proc, clust_method = "pvclust", nboot = 10, dist_method = "SCA")
+# 
+# # Plot tree
+# library("pvclust")
+# plot(hs.x.pvclust)
+# 
+# # Plot confidence threshold
+# pvclust::pvrect(hs.x.pvclust, alpha = 0.05)
+```
+
+# Cluster cells using PAM
+
+```{r}
+hs.type <- hs_type(hs.x.proc, PCA.var = 0.90)
+head(hs.type)
+```
+
+# tSNE analysis
+
+```{r}
+hs.x.tsne <- hs_tsne(hs.x.proc)
+head(hs.x.tsne)
+```
+
+# Phenotypic heterogeneity analysis
+
+```{r}
+# On normalized data
+hs_diversity <- hs_phenoRam(hs.x.proc, preprocess = FALSE)
+head(hs_diversity)
+
+# Using peak detection
+hs_diversity_peak <- hs_phenoRam(hs.x.proc, preprocess = FALSE,
+  peak_detection = TRUE, peak_method = "MAD")
+head(hs_diversity_peak)
+```
+
+# Random forest model 
+
+```{r}
+# Create mock-up metadata
+mock_meta <- data.frame(Spectrum_ID = rownames(hs.x.proc@data$spc),
+group = factor(c(rep(1, 30), rep(2, 34))))
+
+# Calculate metrics
+hs.RF <- hs_RF(
+  hs.x = hs.x.proc,
+  metadata = mock_meta,
+  spectrumID_col = "Spectrum_ID",
+  target_var = "group",
+  ntree = 500,
+  p_train = 0.75
+)
+
+# Trained model
+print(hs.RF[[1]])
+
+# Confusion matrix
+print(hs.RF[[2]])
+
+# Variable importance metric
+caret::varImp(hs.RF[[1]])
+
+# Perform predictions of group labels on "new data"
+hs_RF_pred(hs.x = hs.x.proc, model = hs.RF[[1]])
+```
+
+# Convenience functions
+```{r}
+# Convert from hyperspec to maldiquant object
+mq.conv <- hs_conv_mq(hs.x.proc)
+head(mq.conv)
+
+# Vice versa
+hs.conv <- mq_conv_hs(mq.conv)
+head(hs.conv)
+```
+
+```{r}
+
+```
+

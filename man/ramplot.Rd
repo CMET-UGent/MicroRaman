@@ -27,12 +27,3 @@ ramplot(
 This convenience function is a wrapper around MALDIquant plot-methods.
 In essence it does nothing else than rename the axes.
 }
-\examples{
-## Short example
-
-# Load hyperSpec object
-data("mdqs")
-
-ramplot(mdqs[[1]])
-
-}

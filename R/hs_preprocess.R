@@ -12,6 +12,7 @@
 #' @importFrom tidyr spread
 #' @importFrom graphics lines legend plot
 #' @importFrom hyperSpec hy.setOptions spc.loess orderwl
+#' @importFrom graphics par
 #' @examples
 #' # Load hyperSpec object
 #' data("hs_example")

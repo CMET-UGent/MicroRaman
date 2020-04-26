@@ -5,7 +5,7 @@
 #' @importFrom hyperSpec orderwl read.spc hy.setOptions
 #' @examples
 #' # Import Raman spectral data
-#' hs.x <- hs_import(path = "")
+#' # hs.x <- hs_import(path = "")
 #' @export
 
 hs_import <- function(path = NULL, pattern = ".spc") {

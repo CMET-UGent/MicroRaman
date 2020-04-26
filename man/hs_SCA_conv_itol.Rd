@@ -34,21 +34,6 @@ The SCA measures the angle between two vectors corresponding to closely
  related spectra to measure whether they are the same or not
  (Wan *et al.*, 2002). This function returns an iTol (Letunic & Bork, 2016)
 }
-\examples{
-## Short example
-
-# Load and pretransform MassSpectrum object
-data("mass.spectra.baseline.corr")
-mass.spectra.baseline.corr <- wlcutter(mass.spectra.baseline.corr)
-mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
-# Convert to hyperSpec object
-hs.norm <- mq2hs(mq.norm)
-Medium <- c(rep("LB",134),rep("NB",134))
-Replicate <- c(rep("rep1",45),rep("rep2",45),rep("rep3",44),
-               rep("rep1",45),rep("rep2",44),rep("rep3",45))
-itolius <- SCAtoItol(hs.norm,Factor1=Medium,Factor2=Replicate)
-ape::write.tree(itolius, file = "Dendrogram", digits = 10)
-}
 \references{
 Wan, K. X., Vidavsky, I., & Gross, M. L. (2002). Comparing similar spectra: from similarity index to spectral contrast angle. Journal of the American Society for Mass Spectrometry, 13(1), 85-88.
 

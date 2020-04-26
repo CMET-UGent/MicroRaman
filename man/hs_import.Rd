@@ -14,5 +14,5 @@ This function imports Raman data (Thermo Galactic's spc file format) into the R 
 }
 \examples{
 # Import Raman spectral data
-hs.x <- hs_import(path = "")
+# hs.x <- hs_import(path = "")
 }

@@ -39,15 +39,3 @@ Optionally, the original spectrum can be added (for reference). At the moment
 the function assumes that the cells are in the same order in the baseline-
 corrected and original data.
 }
-\examples{
-## Short example
-
-# Load hyperSpec object
-data("mdqs")
-data("mass.spectra.baseline.corr")
-
-# Extract wavelengths and plot
-mdqs.trim <- trim(mdqs, range=c(600, 1800))
-mq_baseline_plot(mass.spectra.baseline.corr,mdqs.trim,i=2,addorig=TRUE)
-
-}

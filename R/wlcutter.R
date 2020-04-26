@@ -14,14 +14,6 @@
 #'     and upper_wl. Defaults to 0. Needs to be a single integer value (for now).
 #' @return a list of  MALDIquant::massSpectrum objects with replaced intensities
 #' @importFrom MALDIquant createMassSpectrum mass intensity metaData<-
-#' @examples
-#' ## Short example
-#'
-#' # Load hyperSpec object
-#' data("mass.spectra.baseline.corr")
-#'
-#' # Convert to MassSpectrum object
-#' massspec_newintens <- wlcutter(mass.spectra.baseline.corr)
 #' @export
 
 wlcutter <- function(x,lower_wl=900L,upper_wl=1100L,new_intens=0L){

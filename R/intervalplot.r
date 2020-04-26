@@ -4,13 +4,6 @@
 #' or not they were constant.
 #' @param trimmedwl a numeric vector of wavelengths (trimmed to the biological relevant part)
 #' @importFrom graphics plot axis
-#' @examples
-#' data("mdqs")
-#'
-#' # Extract wavelengths and plot
-#' mdqs.trim <- trim(mdqs, range=c(600, 1800))
-#' wavelengths.trim <-  mass(mdqs.trim[[1]])
-#' intervalplot(trimmedwl=wavelengths.trim)
 #' @export
 intervalplot <- function(trimmedwl){
   interval <- vector()

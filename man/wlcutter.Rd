@@ -27,12 +27,3 @@ sets the intensitiy values between certain wavelengths to a given value.
 By default, this value is zero, as this function can be used to remove errant
 peaks from the spectra.
 }
-\examples{
-## Short example
-
-# Load hyperSpec object
-data("mass.spectra.baseline.corr")
-
-# Convert to MassSpectrum object
-massspec_newintens <- wlcutter(mass.spectra.baseline.corr)
-}

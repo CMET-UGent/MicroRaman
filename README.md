@@ -18,7 +18,7 @@ García‐Timermans, C., Rubbens, P., Heyse, J., Kerckhof, F.‐M., Props, R., S
 Install the package:
 ```R
 library("devtools")
-install_github("CMET-UGent/MicroRaman")
+install_github("CMET-UGent/MicroRaman", build_vignettes = TRUE)
 ```
 For exploring the functionalities, take a look at the vignette:
 

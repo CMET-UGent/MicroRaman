@@ -19,6 +19,7 @@ Imports:
     e1071,
     readxl,
     pvclust,
+    randomForest,
     openxlsx,
     plotrix,
     reshape2,

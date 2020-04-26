@@ -2,38 +2,67 @@
 
 # MicroRaman
 *******************
-- **Authors**: [Frederiek-Maarten Kerchkof](mailto:FrederiekMaarten.Kerckhof@UGent.be), [Benjamin Buysschaert](mailto:Benjamin.Buysschaert@Ugent.be), [Dmitry Khalenkow](mailto:Dmitry.Khalenkow@Ugent.be), [Jasmine Heyse](mailto:Jasmine.Heyse@ugent.be), [Ruben Props](mailto:Ruben.Props@ugent.be) and [Cristina Garcia Timermans](mailto:Cristina.GarciaTimermans@ugent.be).
+- **Authors**: [Frederiek-Maarten Kerchkof](mailto:FrederiekMaarten.Kerckhof@UGent.be), [Cristina Garcia Timermans](mailto:Cristina.GarciaTimermans@ugent.be), and [Ruben Props](mailto:Ruben.Props@ugent.be).
 
-The goal of this package is to provide a standardized and automated workflow for spectral analysis in a fast and objective way, removing the post-processing bias of different operators. 
+- **Contributors**:
+[Benjamin Buysschaert](mailto:Benjamin.Buysschaert@Ugent.be), [Jasmine Heyse](mailto:Jasmine.Heyse@ugent.be), and [Peter Rubbens](mailto:peter.rubbens@vliz.be).
 
-If you use this package, please consider citing the original publication:  
+The goal of this package is to provide a standardized and automated workflow for Raman spectra analysis. 
+
+If you use this package, please consider citing the original publication in which is was first used:  
 
 García-Timermans, C., Rubbens, P., Kerckhof, F. M., Buysschaert, B., Khalenkow, D., Waegeman, W., Skirtach, A. G. & Boon, N. (2018). Label-free Raman characterization of bacteria calls for standardized procedures. Journal of microbiological methods, 151, 69-75.
+
+García‐Timermans, C., Rubbens, P., Heyse, J., Kerckhof, F.‐M., Props, R., Skirtach, A.G., Waegeman, W. and Boon, N. (2020), Discriminating Bacterial Phenotypes at the Population and Single‐Cell Level: A Comparison of Flow Cytometry and Raman Spectroscopy Fingerprinting. Cytometry. doi:10.1002/cyto.a.23952
 
 Install the package:
 ```R
 library("devtools")
-install_github("CMET-UGent/MicroRaman")
+install_github("CMET-UGent/MicroRaman", build_vignettes = TRUE)
+```
+For exploring the functionalities, take a look at the vignette:
+
+```R
+vignette("Demo", package = "MicroRaman")
 ```
 
-## Available functions
+## Core functions
 
-Functions  | Actions
-------------| -----------
-baselinecorrplot | plot the result of optimal baseline correction
-hs2mq | converts a `hyperSpec::hyperSpec` object directly to a `MALDIquant::MassSpectrum` object
-intervalplot | plotting function that shows if (trimmed) wavelengths are evenly spaced
-iterationsplot | plot the effect of iterations on baseline correction
-grid_arrange_shared_legend | Function for creating a common legend for 2 ggplot2 figures.
-iterationsplot | plots baseline correction for several iterations on the spectral data to determine the optimal number of iterations
-mq2hs | Convert a MassSpectrum object to a hyperSpec object
-ramplot | Convenience function to plot Raman spectra (from `MALDIquant::MassSpectrum`)
-SCA | calculates the spectral contracst angle between two vectors
-SCA.diss | calculates the spectral contrast angle (SCA) between all cells in a hyperSpec object
-wlcutter | Set intensities of a given bandpass to a defined value (anomalous peak removal)
+Functions  | Description | Functional?
+------------ | ----------- | -----------
+hs_import | Import Thermo Galactic's spc file format data into the R environment | YES
+hs_preprocess | Preprocesses the data using the Garcia-Timermans et al. (2020) workflow | YES
+hs_resample | Resample hyperSpec object to a requested number of spectra | YES
+hs_contrast | Calculate contrasts between spectra of specified groups of cells | YES
+hs_hclust | Hierarchical clustering of Raman spectra (with or without bootstrap support) | YES
+hs_hclust_cutoff | Visualization of distance cut-off in hclust plots | YES
+hs_type | Clusters spectra using partitioning around medoids  | YES
+hs_PCA | Principal Component Analysis of Raman spectra | YES
+hs_tsne | t-distributed stochastic neighbor embedding of Raman spectra  | YES
+hs_phenoRam | Calculation of Hill diversity numbers for each individual Raman spectrum | YES
+hs_RF | Train Random Forest classifier to distinguish between groups of cells | YES
+hs_RF_pred | Predict using Random Forest classifier on new data | YES
+hs_SCAdiss | Calculates the spectral contrast angle (SCA) between all cells in a hyperSpec object | YES
 
 
-## Avaiable datasets
+## Convenience functions
+Functions  | Description | Functional?
+------------| ----------- | -----------
+hs_conv_mq | Converts a `hyperSpec::hyperSpec` object directly to a `MALDIquant::MassSpectrum` object | YES
+mq_conv_hs | Converts a `MALDIquant::MassSpectrum` object directly to a `hyperSpec::hyperSpec` object | YES
+hs_tidy_filenames | Tidies up hyperspec spectral IDs | YES
+hs_SCA_conv_itol | Convert SCA dissimilarity matrix to itol-compatible object | NO
+mq_plot | | NO
+mq_baseline_plot | | NO
+mq_iter_plot | | NO
+intervalplot | | NO
+model_fit_stats | | NO
+pred_r_squared | | NO
+PRESS | | NO
+SCA | Calculates the spectral contrast angle between two vectors | YES
+wlcutter | | NO
+
+## Available datasets
 
 Some datasets are included in the package. They allow the examples and vigenttes
 to be run. They can be loaded using:
@@ -44,7 +73,4 @@ data("<name of dataset>")
 
 Dataset name | Data contents
 -------------| ----------------
-mass.spectra.baseline.corr |baseline-corrected raman spectra
-mdqs | Raman spectrometry test single-cell data of Escherichia coli LMG2092 biological replicates (list of MALDIquant objects)
-spx.all | Hyperspec dataset (list of hyperSpec class objects) from single-cell data of *E. coli* LMG 2092 in triplicate in NB and LB test.
-SCA.similarity | Spectral contrast angle similarities calculated on the spx.all/mdqs data
+hs_example | Hyperspec object contaning single-cell data of 64 GFP expressing yeast cells

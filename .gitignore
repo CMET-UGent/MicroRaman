@@ -26,3 +26,7 @@ vignettes/*.pdf
 *.utf8.md
 *.knit.md
 inst/doc
+old_data/
+test_data/
+doc
+Meta

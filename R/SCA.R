@@ -10,10 +10,10 @@
 #' @references Wan, K. X., Vidavsky, I., & Gross, M. L. (2002). Comparing similar spectra: from similarity index to spectral contrast angle. Journal of the American Society for Mass Spectrometry, 13(1), 85-88.
 #' @examples
 #' # Load hyperSpec object
-#' data("hs.example")
+#' data("hs_example")
 #'
 #' # Convert to MassSpectrum object
-#' hs.x.proc <- hs_preprocess(hs.x)
+#' hs.x.proc <- hs_preprocess(hs_example)
 #'
 #' # Calc SCA
 #' disst <- SCA(hs.x.proc@data$spc[1,], hs.x.proc@data$spc[2,])

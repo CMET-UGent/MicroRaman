@@ -18,10 +18,10 @@ The SCA measures the angle between two vectors corresponding to closely
 }
 \examples{
 # Load hyperSpec object
-data("hs.example")
+data("hs_example")
 
 # Convert to MassSpectrum object
-hs.x.proc <- hs_preprocess(hs.x)
+hs.x.proc <- hs_preprocess(hs_example)
 
 # Calc SCA
 disst <- SCA(hs.x.proc@data$spc[1,], hs.x.proc@data$spc[2,])

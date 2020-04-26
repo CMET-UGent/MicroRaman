@@ -20,6 +20,11 @@ Install the package:
 library("devtools")
 install_github("CMET-UGent/MicroRaman")
 ```
+For exploring the functionalities, take a look at the vignette:
+
+```R
+vignette("Demo", package = "MicroRaman")
+```
 
 ## Core functions
 

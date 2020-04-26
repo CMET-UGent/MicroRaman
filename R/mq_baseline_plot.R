@@ -20,17 +20,6 @@
 #' @param ... additional parameters passed on to plot
 #' @importFrom MALDIquant isMassSpectrum intensity
 #' @importFrom graphics lines legend plot
-#' @examples
-#' ## Short example
-#'
-#' # Load hyperSpec object
-#' data("mdqs")
-#' data("mass.spectra.baseline.corr")
-#'
-#' # Extract wavelengths and plot
-#' mdqs.trim <- trim(mdqs, range=c(600, 1800))
-#' mq_baseline_plot(mass.spectra.baseline.corr,mdqs.trim,i=2,addorig=TRUE)
-#'
 #' @export
 
 mq_baseline_plot <- function(mscorr,msorig=NULL,i=1L,addorig=FALSE,methodused="SNIP",...){

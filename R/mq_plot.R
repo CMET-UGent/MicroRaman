@@ -10,14 +10,6 @@
 #' @param ... additional parameters passed on to plot
 #' @importFrom MALDIquant isMassSpectrum
 #' @importFrom graphics plot
-#' @examples
-#' ## Short example
-#'
-#' # Load hyperSpec object
-#' data("mdqs")
-#'
-#' ramplot(mdqs[[1]])
-#'
 #' @export
 
 ramplot <- function(msspc,main="Raman spectrum",

@@ -13,11 +13,3 @@ intervalplot(trimmedwl)
 This function plots the intervals between wavelengths to assess whether
 or not they were constant.
 }
-\examples{
-data("mdqs")
-
-# Extract wavelengths and plot
-mdqs.trim <- trim(mdqs, range=c(600, 1800))
-wavelengths.trim <-  mass(mdqs.trim[[1]])
-intervalplot(trimmedwl=wavelengths.trim)
-}

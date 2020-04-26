@@ -15,20 +15,6 @@
 #' @return an ape::phylo object based upon hclust of SCA distances of the hyperSpec object's cells
 #' @references Wan, K. X., Vidavsky, I., & Gross, M. L. (2002). Comparing similar spectra: from similarity index to spectral contrast angle. Journal of the American Society for Mass Spectrometry, 13(1), 85-88.
 #' @references Letunic, I., & Bork, P. (2016). Interactive tree of life (iTOL) v3: an online tool for the display and annotation of phylogenetic and other trees. Nucleic acids research, 44(W1), W242-W245.
-#' @examples
-#' ## Short example
-#'
-#' # Load and pretransform MassSpectrum object
-#' data("mass.spectra.baseline.corr")
-#' mass.spectra.baseline.corr <- wlcutter(mass.spectra.baseline.corr)
-#' mq.norm <- calibrateIntensity(mass.spectra.baseline.corr, method="TIC",range=c(600, 1800))
-#' # Convert to hyperSpec object
-#' hs.norm <- mq2hs(mq.norm)
-#' Medium <- c(rep("LB",134),rep("NB",134))
-#' Replicate <- c(rep("rep1",45),rep("rep2",45),rep("rep3",44),
-#'                rep("rep1",45),rep("rep2",44),rep("rep3",45))
-#' itolius <- SCAtoItol(hs.norm,Factor1=Medium,Factor2=Replicate)
-#' ape::write.tree(itolius, file = "Dendrogram", digits = 10)
 #' @export
 
 hs_SCA_conv_itol <- function(x,Factor1=c("LB","NB","LB"),Factor1Name="Medium",

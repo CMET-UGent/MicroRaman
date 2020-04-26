@@ -24,19 +24,3 @@ defaults to "SNIP".}
 This function plots baseline correction for several iterations on the
 spectral data to determine the optimal number of iterations
 }
-\examples{
-## Short example
-
-# Load hyperSpec object
-data("mdqs")
-
-# Extract wavelengths and plot
-mdqs.trim <- trim(mdqs, range=c(600, 1800))
-selms <- mdqs.trim[[1]]
-iteration.options <- c(5,10,20,30,40,50,100)
-iterationsplot(mdq=selms,itervect=iteration.options)
-# if you want to check for all
-# pdf("iterationplots.pdf")
-# lapply(mdqs,iterationsplot,iteration.options)
-# dev.off()
-}

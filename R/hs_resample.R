@@ -9,7 +9,6 @@
 #' @param seed Set seed for reproducibile sampling if that is necessary. Defaults to NULL.
 #' @return Hyperspec object
 #' @keywords resampling, hyperSpec
-#' @importFrom base sample
 #' @examples
 #' # Short example
 #' data("hs_example")
@@ -44,7 +43,7 @@ hs_resample <- function(hs.x,
   }
 
   # Resample
-  s_r <- sample(1:length(hs.x), size = sample, replace = replace)
+  s_r <- base::sample(1:length(hs.x), size = sample, replace = replace)
   mat.x.r <- hs.x@data$spc[s_r,]
 
   # Get file names

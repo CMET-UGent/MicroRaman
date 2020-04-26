@@ -41,6 +41,9 @@ data("hs_example")
 
 # Preprocess spectra
 hs.x.proc <- hs_preprocess(hs_example)
+hs.x.proc <- hs_resample(hs.x.proc, sample = 10)
 
-hclust_obj <- hs_hclust(hs.x.proc)
+# Cluster
+hclust_obj <- hs_hclust(hs.x.proc, dist_method = "bray",
+clust_method = "hclust")
 }

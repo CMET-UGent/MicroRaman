@@ -11,13 +11,14 @@
 #' @importFrom stats rect.hclust
 #' @examples
 #' # Load hyperSpec object
-#' data("hs.example")
+#' data("hs_example")
 #'
 #' # Convert to MassSpectrum object
-#' hs.x.proc <- hs_preprocess(hs.x)
+#' hs.x.proc <- hs_preprocess(hs_example)
 #'
 #' # cluster cells
-#' hclust_obj <- hs_hclust(hs.x.proc)
+#' hclust_obj <- hs_hclust(hs.x.proc, dist_method = "bray",
+#' clust_method = "hclust")
 #'
 #' # Draw cutoff
 #' hs_hclust_cutoff(hclust_obj)

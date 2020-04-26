@@ -5,7 +5,7 @@
 - **Authors**: [Frederiek-Maarten Kerchkof](mailto:FrederiekMaarten.Kerckhof@UGent.be), [Cristina Garcia Timermans](mailto:Cristina.GarciaTimermans@ugent.be), and [Ruben Props](mailto:Ruben.Props@ugent.be).
 
 - **Contributors**:
-[Benjamin Buysschaert](mailto:Benjamin.Buysschaert@Ugent.be) and [Jasmine Heyse](mailto:Jasmine.Heyse@ugent.be) 
+[Benjamin Buysschaert](mailto:Benjamin.Buysschaert@Ugent.be), [Jasmine Heyse](mailto:Jasmine.Heyse@ugent.be), and [Peter Rubbens](mailto:peter.rubbens@vliz.be).
 
 The goal of this package is to provide a standardized and automated workflow for Raman spectra analysis. 
 

@@ -17,7 +17,6 @@ Imports:
     baseline,
     tidyr,
     e1071,
-    rgl,
     readxl,
     pvclust,
     openxlsx,

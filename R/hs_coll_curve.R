@@ -12,6 +12,8 @@
 #' @param peak_method Which peak detection method should be used (requires peak_detection == TRUE).
 #' Options are "MAD" and "SuperSmoother"
 #' @param plot_fig Should figures of collectors curves be shown? Defaults to TRUE.
+#' @importFrom dplyr group_by summarize
+#' @importFrom magrittr %>%
 #' @examples
 #' # Short example
 #' data("hs_example")

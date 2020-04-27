@@ -61,7 +61,7 @@ hs.x.proc <- hs_preprocess(hs.x, smooth = FALSE)
 summary(hs.x.proc)
 
 # Resample if desired
-hs.x.proc.r <- hs_resample(hs.x.proc, sample = 20, replace = FALSE)
+hs.x.proc.r <- hs_resample(hs.x.proc, sample = 60, replace = FALSE)
 summary(hs.x.proc.r)
 ```
 
@@ -126,7 +126,7 @@ head(hs.x.tsne)
 
 # Phenotypic heterogeneity analysis
 
-```{r}
+```{r, fig.width=9, fig.height=5}
 # On normalized data
 hs_diversity <- hs_phenoRam(hs.x.proc, preprocess = FALSE)
 head(hs_diversity)
@@ -135,6 +135,10 @@ head(hs_diversity)
 hs_diversity_peak <- hs_phenoRam(hs.x.proc, preprocess = FALSE,
   peak_detection = TRUE, peak_method = "MAD")
 head(hs_diversity_peak)
+
+# Check sample size effect 
+hs_coll_curves <- hs_coll_curve(hs.x.proc, intervals = 10, nboot = 100, plot_fig = TRUE)
+head(hs_coll_curves)
 ```
 
 # Random forest model 

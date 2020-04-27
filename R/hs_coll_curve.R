@@ -70,7 +70,7 @@ hs_coll_curve <- function(hs.x,
       ggplot2::labs(y = "D0", x = "number of spectra")+
       ggplot2::theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 12))+
-      ggplot2::ylim(0, 400)
+      ggplot2::ylim(0, 1.1*max(results_coll$D0.mean))
 
     p2 <- ggplot2::ggplot(results_coll, aes(x = nspec, y = D1.mean))+
       ggplot2::geom_point(size = 3, shape = 21)+
@@ -80,7 +80,7 @@ hs_coll_curve <- function(hs.x,
       ggplot2::labs(y = "D1", x = "number of spectra")+
       ggplot2::theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 12))+
-      ggplot2::ylim(0, 400)
+      ggplot2::ylim(0, 1.1*max(results_coll$D0.mean))
 
     p3 <- ggplot2::ggplot(results_coll, aes(x = nspec, y = D2.mean))+
       ggplot2::geom_point(size = 3, shape = 21)+
@@ -90,9 +90,9 @@ hs_coll_curve <- function(hs.x,
       ggplot2::labs(y = "D2", x = "number of spectra")+
       ggplot2::theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 12))+
-      ggplot2:: ylim(0, 400)
+      ggplot2::ylim(0, 1.1*max(results_coll$D0.mean))
 
-    cowplot::plot_grid(p1, p2, p3, nrow = 1)
+    print(cowplot::plot_grid(p1, p2, p3, nrow = 1))
   }
 
   return(results_coll)

@@ -126,7 +126,7 @@ head(hs.x.tsne)
 
 # Phenotypic heterogeneity analysis
 
-```{r, fig.width=9, fig.height=5}
+```{r, fig.width=9, fig.height=4}
 # On normalized data
 hs_diversity <- hs_phenoRam(hs.x.proc, preprocess = FALSE)
 head(hs_diversity)

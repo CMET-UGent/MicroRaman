@@ -42,7 +42,14 @@ hs_phenoRam <- function(hs.x,
   # Make sure to keep file names on import
   hy.setOptions(file.keep.name = TRUE)
 
-  # Load data if path is given
+  # Check if hyperspec object
+  if (is.null(hs.x) | class(hs.x) != "hyperSpec") {
+    stop(
+      "Error: you did not supply a valid hyperSpec object,
+      and there is no default, please correct"
+    )
+  }
+
   # Preprocess data according to Garcia-Timermans et al. (2020)
   if(preprocess){
     hs.x <- hs_preprocess(hs.x,

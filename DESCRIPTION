@@ -25,6 +25,7 @@ Imports:
     dendextend,
     colorspace,
     ggplot2,
+    cowplot,
     NISTunits,
     vegan,
     dplyr,

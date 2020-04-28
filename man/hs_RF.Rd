@@ -31,6 +31,8 @@ in metadata}
 \item{p_train}{Percentage of data to use in training model. Defaults to 0.75.}
 
 \item{metric}{Metric to use to report/maximize performance of model (only for method_ML = "rf")}
+
+\item{...}{additional parameters passed on to caret::train}
 }
 \description{
 Train random forest model on hyperspec object

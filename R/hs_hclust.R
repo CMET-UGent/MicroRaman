@@ -4,9 +4,8 @@
 #' @param dist_method Dissimilarity index, partial match to "manhattan", "euclidean", "canberra", "clark",
 #' "bray", "kulczynski", "jaccard", "gower", "altGower", "morisita", "horn",
 #' "mountford", "raup", "binomial", "chao", "cao" or "mahalanobis". Can be specified to "SCA" for Raman data.
-#' @param clust_method Choose regular hierarchical clustering or bootstrap supported hierarchical clustering with pvclust
+#' @param clust_method Choose regular hierarchical clustering or bootstrap supported hierarchical clustering with pvclust. Defaults to pvclust
 #' @param nboot Numnber of bootstraps for pvclust. Defaults to 1000.
-#' @param method.hclust Clustering method to use for pvclust. Either hclust or pvclust. Defaults to "pvclust"..
 #' @param aggl_method the agglomerative method used in hierarchical clustering. This should be (an abbreviation of) one of "average", "ward.D", "ward.D2", "single", "complete", "mcquitty", "median" or "centroid". The default is "average".
 #' @param ... Parameters to pass on to hclust().
 #' @importFrom stats hclust dist

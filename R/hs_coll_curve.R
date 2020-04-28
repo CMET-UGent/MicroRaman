@@ -15,8 +15,10 @@
 #' @param plot_fig Should figures of collectors curves be shown? Defaults to TRUE.
 #' @importFrom dplyr group_by summarize
 #' @importFrom magrittr %>%
-#' @importFrom ggplot2 geom_point theme_bw geom_smooth geom_errorbar labs theme ylim ggplot
+#' @importFrom ggplot2 geom_point theme_bw geom_smooth geom_errorbar labs theme ylim ggplot aes element_text
 #' @importFrom cowplot plot_grid
+#' @importFrom rlang .data
+#' @importFrom stats sd
 #' @examples
 #' # Short example
 #' data("hs_example")
@@ -59,37 +61,42 @@ hs_coll_curve <- function(hs.x,
 
   # Calc means and st dev for each cell size
   results_coll <- tmp %>%
-    group_by(nspec) %>%
-    summarize(D0.mean = mean(D0), D1.mean = mean(D1), D2.mean = mean(D2),
-      D0.sd = sd(D0), D1.sd = sd(D1), D2.sd = sd(D2))
+    group_by(.data$nspec) %>%
+    summarize(D0.mean = mean(.data$D0), D1.mean = mean(.data$D1),
+              D2.mean = mean(.data$D2),
+              D0.sd = sd(.data$D0), D1.sd = sd(.data$D1),
+              D2.sd = sd(.data$D2))
 
   # Plot the results
   if(plot_fig){
-    p1 <- ggplot(results_coll, aes(x = nspec, y = D0.mean))+
+    p1 <- ggplot(results_coll, aes(x = .data$nspec, y = .data$D0.mean))+
       geom_point(size = 3, shape = 21)+
       theme_bw()+
       geom_smooth(se = FALSE, col = "black")+
-      geom_errorbar(aes(ymin = D0.mean - D0.sd, ymax = D0.mean + D0.sd), width = 0.02)+
+      geom_errorbar(aes(ymin = .data$D0.mean - .data$D0.sd,
+                        ymax = .data$D0.mean + .data$D0.sd), width = 0.02)+
       labs(y = "D0", x = "number of spectra")+
       theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 12))+
       ylim(0, 1.1*max(results_coll$D0.mean))
 
-    p2 <- ggplot(results_coll, aes(x = nspec, y = D1.mean))+
+    p2 <- ggplot(results_coll, aes(x = .data$nspec, y = .data$D1.mean))+
       geom_point(size = 3, shape = 21)+
       theme_bw()+
       geom_smooth(se = FALSE, col = "black")+
-      geom_errorbar(aes(ymin = D1.mean - D1.sd, ymax = D1.mean + D1.sd), width = 0.02)+
+      geom_errorbar(aes(ymin = .data$D1.mean - .data$D1.sd,
+                        ymax = .data$D1.mean + .data$D1.sd), width = 0.02)+
       labs(y = "D1", x = "number of spectra")+
       theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 12))+
       ylim(0, 1.1*max(results_coll$D0.mean))
 
-    p3 <- ggplot(results_coll, aes(x = nspec, y = D2.mean))+
+    p3 <- ggplot(results_coll, aes(x = .data$nspec, y = .data$D2.mean))+
       geom_point(size = 3, shape = 21)+
       theme_bw()+
       geom_smooth(se = FALSE, col = "black")+
-      geom_errorbar(aes(ymin = D2.mean - D2.sd, ymax = D2.mean + D2.sd), width = 0.02)+
+      geom_errorbar(aes(ymin = .data$D2.mean - .data$D2.sd,
+                        ymax = .data$D2.mean + .data$D2.sd), width = 0.02)+
       labs(y = "D2", x = "number of spectra")+
       theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 12))+

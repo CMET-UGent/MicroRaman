@@ -40,6 +40,7 @@ hs_type | Clusters spectra using partitioning around medoids  | YES
 hs_PCA | Principal Component Analysis of Raman spectra | YES
 hs_tsne | t-distributed stochastic neighbor embedding of Raman spectra  | YES
 hs_phenoRam | Calculation of Hill diversity numbers for each individual Raman spectrum | YES
+hs_coll_curve | Checks sensitivity of Hill diversity calculations under various sample sizes | YES
 hs_RF | Train Random Forest classifier to distinguish between groups of cells | YES
 hs_RF_pred | Predict using Random Forest classifier on new data | YES
 hs_SCAdiss | Calculates the spectral contrast angle (SCA) between all cells in a hyperSpec object | YES

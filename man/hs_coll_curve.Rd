@@ -43,5 +43,5 @@ data("hs_example")
 hs_example <- hs_preprocess(hs_example)
 
 # Calculate metrics
-hs_coll_curve(hs_example, intervals = 3, nboot = 10)
+hs_coll_curve(hs_example, intervals = 3, nboot = 10, plot_fig = FALSE)
 }

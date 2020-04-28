@@ -20,15 +20,13 @@ hs_hclust(
 "bray", "kulczynski", "jaccard", "gower", "altGower", "morisita", "horn",
 "mountford", "raup", "binomial", "chao", "cao" or "mahalanobis". Can be specified to "SCA" for Raman data.}
 
-\item{clust_method}{Choose regular hierarchical clustering or bootstrap supported hierarchical clustering with pvclust}
+\item{clust_method}{Choose regular hierarchical clustering or bootstrap supported hierarchical clustering with pvclust. Defaults to pvclust}
 
 \item{aggl_method}{the agglomerative method used in hierarchical clustering. This should be (an abbreviation of) one of "average", "ward.D", "ward.D2", "single", "complete", "mcquitty", "median" or "centroid". The default is "average".}
 
 \item{nboot}{Numnber of bootstraps for pvclust. Defaults to 1000.}
 
 \item{...}{Parameters to pass on to hclust().}
-
-\item{method.hclust}{Clustering method to use for pvclust. Either hclust or pvclust. Defaults to "pvclust"..}
 }
 \description{
 Perform hierarchical clustering on Raman spectra

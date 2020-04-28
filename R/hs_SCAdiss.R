@@ -20,11 +20,11 @@
 #' disst <- hs_SCAdiss(hs.x.proc)
 #' @export
 
-hs_SCAdiss <- function(hs.x) {
-  if (!class(hs.x) == "hyperSpec") {
+hs_SCAdiss <- function(x) {
+  if (!class(x) == "hyperSpec") {
     stop("You did not supply a valid hyperSpec object, and there is no default.")
   }
-  matr <- hs.x@data$spc
+  matr <- x@data$spc
   diss <- matrix(nrow = nrow(matr), ncol = nrow(matr))
   # there has to be a way to get rid of this double for-loop
   # TODO: have a look at cov and see how it's done there (apparently with C calls)
@@ -33,7 +33,7 @@ hs_SCAdiss <- function(hs.x) {
       diss[i, j] <- SCA(matr[i, ], matr[j, ])
     }
   }
-  row.names(diss) <- rownames(hs.x@data$spc)
+  row.names(diss) <- rownames(x@data$spc)
   diss <- as.dist(diss)
   attr(diss, "method") <- "hs_SCAdiss"
   return(diss)

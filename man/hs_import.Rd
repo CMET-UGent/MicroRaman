@@ -8,6 +8,8 @@ hs_import(path = NULL, pattern = ".spc")
 }
 \arguments{
 \item{path}{path}
+
+\item{pattern}{(POSIX) regular expression used to select files (defaults to ".spc")}
 }
 \description{
 This function imports Raman data (Thermo Galactic's spc file format) into the R environment

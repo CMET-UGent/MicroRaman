@@ -9,6 +9,7 @@
 #' @param p_train Percentage of data to use in training model. Defaults to 0.75.
 #' @param ntree Number of trees to build. Defaults to 500.
 #' @param metric Metric to use to report/maximize performance of model (only for method_ML = "rf")
+#' @param ... additional parameters passed on to caret::train
 #' @importFrom tidyr spread
 #' @importFrom caret trainControl createDataPartition train confusionMatrix
 #' @importFrom randomForest randomForest
@@ -83,7 +84,7 @@ hs_RF <- function(hs.x,
     x = train_data[, !colnames(train_data) %in% c(target_var, spectrumID_col)],
     method = "rf",
     metric = metric, tuneGrid = tunegrid,
-    trControl = fitControl, ntree = ntree)
+    trControl = fitControl, ntree = ntree, ...)
 
   # Predict on test data set for confusion matrix:
   RF_pred <- stats::predict(RF_train, newdata = test_data)

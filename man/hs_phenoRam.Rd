@@ -28,6 +28,13 @@ hs_phenoRam(
 
 \item{align}{Align option for preprocessing. Defaults to FALSE.}
 
+\item{path}{path where Raman data is located, only useful if preprocess==TRUE}
+
+\item{trim.range}{Wavenumber range to trim from raw spectra. Only used if preprocess==TRUE}
+
+\item{pattern}{(POSIX) regular expression used to select files (defaults to ".spc"), only used if preprocess==TRUE
+Options are "MAD" and "SuperSmoother"}
+
 \item{niter}{Number of iteration Option for preprocessing. Defaults to FALSE.}
 
 \item{return_spectra}{Should hyperSpec object be returned as final object? Defaults to TRUE.}
@@ -36,8 +43,7 @@ hs_phenoRam(
 
 \item{peak_window}{Peak windows size for a peak to be considered a signal. Defaults to 20.}
 
-\item{peak_method}{Which peak detection method should be used (requires peak_detection == TRUE).
-Options are "MAD" and "SuperSmoother"}
+\item{peak_method}{Which peak detection method should be used (requires peak_detection == TRUE).}
 }
 \description{
 Calculate the phenotypic heterogeneity indices for each cell

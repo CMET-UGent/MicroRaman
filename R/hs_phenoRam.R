@@ -9,9 +9,12 @@
 #' @param peak_detection Should peak detection be used instead of raw spectra for Hill calculations? Defaults to FALSE
 #' @param peak_window Peak windows size for a peak to be considered a signal. Defaults to 20.
 #' @param peak_method Which peak detection method should be used (requires peak_detection == TRUE).
+#' @param path path where Raman data is located, only useful if preprocess==TRUE
+#' @param trim.range Wavenumber range to trim from raw spectra. Only used if preprocess==TRUE
+#' @param pattern (POSIX) regular expression used to select files (defaults to ".spc"), only used if preprocess==TRUE
 #' Options are "MAD" and "SuperSmoother"
 #' @importFrom MALDIquant isMassSpectrum intensity createMassSpectrum mass calibrateIntensity trim estimateBaseline removeBaseline
-#' @importFrom  MALDIquant alignSpectra
+#' @importFrom MALDIquant alignSpectra detectPeaks
 #' @importFrom tidyr spread
 #' @importFrom graphics lines legend plot
 #' @importFrom hyperSpec hy.setOptions spc.loess orderwl
@@ -81,7 +84,7 @@ hs_phenoRam <- function(hs.x,
         df_peaks <- rbind(df_peaks, tmp)
       }
     }
-    df_peaks <- tidyr::spread(df_peaks, wavenumber, intensity)
+    df_peaks <- tidyr::spread(df_peaks, .data$wavenumber, .data$intensity)
     wavelengths.trim <- as.numeric(colnames(df_peaks)[-1])
     hs.x <-
       new(

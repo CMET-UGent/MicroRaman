@@ -2,6 +2,7 @@
 #'
 #' This function imports Raman data (Thermo Galactic's spc file format) into the R environment
 #' @param path path
+#' @param pattern (POSIX) regular expression used to select files (defaults to ".spc")
 #' @importFrom hyperSpec orderwl read.spc hy.setOptions
 #' @examples
 #' # Import Raman spectral data

@@ -10,6 +10,8 @@ hs_RF_pred(hs.x, model, ...)
 \item{hs.x}{Hyperspec object on which to perform predictions}
 
 \item{model}{Model to use for predictions. Output from hs_RF.}
+
+\item{...}{additional parameters passed on to stats::predict}
 }
 \description{
 Train random forest model on hyperspec object

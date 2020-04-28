@@ -4,7 +4,7 @@
 \alias{hs_SCAdiss}
 \title{Calculate the spectral contrast angle (SCA) between all cells in a hyperSpec object}
 \usage{
-hs_SCAdiss(hs.x)
+hs_SCAdiss(x)
 }
 \arguments{
 \item{x}{a hyperSpec object containing the cells in the rows, and wavenumbers (features) in columns}

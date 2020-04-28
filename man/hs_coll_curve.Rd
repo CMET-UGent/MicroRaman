@@ -30,6 +30,8 @@ Defaults to 10 cells.}
 Options are "MAD" and "SuperSmoother"}
 
 \item{plot_fig}{Should figures of collectors curves be shown? Defaults to TRUE.}
+
+\item{replace}{Define whether replacement should be used during spectral resampling. Defaults to TRUE.}
 }
 \description{
 Calculates collection curves that describe the sensitivity of the diversity metrics to sample size.
@@ -43,5 +45,5 @@ data("hs_example")
 hs_example <- hs_preprocess(hs_example)
 
 # Calculate metrics
-hs_coll_curve(hs_example, intervals = 3, nboot = 10, plot_fig = FALSE)
+hs_coll_curve(hs_example, intervals = 3, nboot = 10, plot_fig = FALSE, replace = TRUE)
 }

@@ -41,12 +41,12 @@ hs_tidy_filenames <- function(hs.x,
   } else if (remove_pattern == "rename" && !is.null(rename_df)) {
     # Edit spectra IDs
     if (is.null(rownames(hs.x@data$spc))) {
-      hs_order <- match(hs.x@data$filename, df_rename[, old_name_col])
-      hs.x@data$filename <- df_rename[hs_order, new_name_col]
+      hs_order <- match(hs.x@data$filename, rename_df[, old_name_col])
+      hs.x@data$filename <- rename_df[hs_order, new_name_col]
     }  else {
       hs_order <-
-        match(rownames(hs.x@data$spc), df_rename[, old_name_col])
-      rownames(hs.x@data$spc) <- df_rename[hs_order, new_name_col]
+        match(rownames(hs.x@data$spc), rename_df[, old_name_col])
+      rownames(hs.x@data$spc) <- rename_df[hs_order, new_name_col]
     }
   }
   return(hs.x)

@@ -11,6 +11,7 @@
 #' @param peak_window Peak windows size for a peak to be considered a signal. Defaults to 20.
 #' @param peak_method Which peak detection method should be used (requires peak_detection == TRUE).
 #' Options are "MAD" and "SuperSmoother"
+#' @param replace Define whether replacement should be used during spectral resampling. Defaults to TRUE.
 #' @param plot_fig Should figures of collectors curves be shown? Defaults to TRUE.
 #' @importFrom dplyr group_by summarize
 #' @importFrom magrittr %>%
@@ -24,7 +25,7 @@
 #' hs_example <- hs_preprocess(hs_example)
 #'
 #' # Calculate metrics
-#' hs_coll_curve(hs_example, intervals = 3, nboot = 10, plot_fig = FALSE)
+#' hs_coll_curve(hs_example, intervals = 3, nboot = 10, plot_fig = FALSE, replace = TRUE)
 #' @export
 #'
 hs_coll_curve <- function(hs.x,
@@ -41,7 +42,7 @@ hs_coll_curve <- function(hs.x,
   # Loop through bootstraps and sample sizes
   for(i in seq_int){
     for(j in 1:nboot){
-      hs.x.boot <- hs_resample(hs.x, sample = i, replace = TRUE)
+      hs.x.boot <- hs_resample(hs.x, sample = i, replace = replace)
       hs.x.boot.ram <- hs_phenoRam(hs.x.boot,
         peak_detection = peak_detection,
         peak_window = peak_window,

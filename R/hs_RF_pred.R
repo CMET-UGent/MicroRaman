@@ -2,6 +2,7 @@
 #'
 #' @param hs.x Hyperspec object on which to perform predictions
 #' @param model Model to use for predictions. Output from hs_RF.
+#' @param ... additional parameters passed on to stats::predict
 #' @importFrom tidyr spread
 #' @importFrom randomForest randomForest
 #' @examples
@@ -45,7 +46,7 @@ hs_RF_pred <- function(hs.x,
   }
 
   # Predict on test data set for confusion matrix:
-  RF_pred <- stats::predict(model, newdata = data.frame(hs.x@data$spc))
+  RF_pred <- stats::predict(model, newdata = data.frame(hs.x@data$spc), ...)
 
   return(RF_pred)
   }

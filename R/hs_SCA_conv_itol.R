@@ -39,7 +39,7 @@ hs_SCA_conv_itol <- function(x,Factor1=c("LB","NB","LB"),Factor1Name="Medium",
   uniqcnvecctmp <- make.unique(cnvecttmp,sep="_")
   rownames(x@data$spc) <- uniqcnvecctmp
   hyperSpec::rownames(x) <- uniqcnvecctmp
-  simitol <- SCA.diss(x)
+  simitol <- hs_SCAdiss(x)
   denditol <- hclust(simitol,method="ward.D2")
   denditol$tip.label <- uniqcnvecctmp
   dendrogram.itol <- as.phylo(denditol)

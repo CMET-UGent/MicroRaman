@@ -1,8 +1,8 @@
 #' Calculate the phenotypic heterogeneity indices for each cell
 #'
 #' @param hs.x Available hyperspec object
-#' @param smooth Smoothing TRUE/FALSE
-#' @param align Align spectra TRUE/FALSE
+#' @param smooth Smoothing TRUE/FALSE. Defaults to FALSE.
+#' @param align Align spectra TRUE/FALSE. Defaults to FALSE.
 #' @param align_ref Spectrum to use as reference for the alignment.
 #' Defaults to 1, the first spectrum.
 #' @param align_tol Tolerance value for alignment. Defaults to 5.

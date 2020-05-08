@@ -20,9 +20,9 @@ hs_preprocess(
 \arguments{
 \item{hs.x}{Available hyperspec object}
 
-\item{smooth}{Smoothing TRUE/FALSE}
+\item{smooth}{Smoothing TRUE/FALSE. Defaults to FALSE.}
 
-\item{align}{Align spectra TRUE/FALSE}
+\item{align}{Align spectra TRUE/FALSE. Defaults to FALSE.}
 
 \item{align_ref}{Spectrum to use as reference for the alignment.
 Defaults to 1, the first spectrum.}

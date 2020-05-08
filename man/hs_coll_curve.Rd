@@ -11,7 +11,8 @@ hs_coll_curve(
   peak_detection = FALSE,
   peak_window = 20,
   peak_method = c("MAD"),
-  plot_fig = TRUE
+  plot_fig = TRUE,
+  replace = TRUE
 )
 }
 \arguments{
@@ -22,16 +23,19 @@ Defaults to 10 cells.}
 
 \item{nboot}{Number of bootstraps to condut for each sample size. Defaults to 10.}
 
-\item{peak_detection}{Should peak detection be used instead of raw spectra for Hill calculations? Defaults to FALSE}
+\item{peak_detection}{Should peak detection be used instead of raw spectra for Hill calculations?
+Defaults to FALSE}
 
-\item{peak_window}{Peak windows size for a peak to be considered a signal. Defaults to 20.}
+\item{peak_window}{Peak windows size for a peak to be considered a signal.
+Defaults to 20.}
 
 \item{peak_method}{Which peak detection method should be used (requires peak_detection == TRUE).
 Options are "MAD" and "SuperSmoother"}
 
 \item{plot_fig}{Should figures of collectors curves be shown? Defaults to TRUE.}
 
-\item{replace}{Define whether replacement should be used during spectral resampling. Defaults to TRUE.}
+\item{replace}{Define whether replacement should be used during spectral resampling.
+Defaults to TRUE.}
 }
 \description{
 Calculates collection curves that describe the sensitivity of the diversity metrics to sample size.

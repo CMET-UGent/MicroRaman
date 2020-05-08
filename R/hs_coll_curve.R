@@ -7,11 +7,14 @@
 #' @param intervals Decide in which sample size intervals you want to inspect the curves.
 #' Defaults to 10 cells.
 #' @param nboot Number of bootstraps to condut for each sample size. Defaults to 10.
-#' @param peak_detection Should peak detection be used instead of raw spectra for Hill calculations? Defaults to FALSE
-#' @param peak_window Peak windows size for a peak to be considered a signal. Defaults to 20.
+#' @param peak_detection Should peak detection be used instead of raw spectra for Hill calculations?
+#' Defaults to FALSE
+#' @param peak_window Peak windows size for a peak to be considered a signal.
+#' Defaults to 20.
 #' @param peak_method Which peak detection method should be used (requires peak_detection == TRUE).
 #' Options are "MAD" and "SuperSmoother"
-#' @param replace Define whether replacement should be used during spectral resampling. Defaults to TRUE.
+#' @param replace Define whether replacement should be used during spectral resampling.
+#' Defaults to TRUE.
 #' @param plot_fig Should figures of collectors curves be shown? Defaults to TRUE.
 #' @importFrom dplyr group_by summarize
 #' @importFrom magrittr %>%
@@ -36,7 +39,8 @@ hs_coll_curve <- function(hs.x,
   peak_detection = FALSE,
   peak_window = 20,
   peak_method = c("MAD"),
-  plot_fig = TRUE){
+  plot_fig = TRUE,
+  replace = TRUE){
 
   # Create sequence of cells to check
   seq_int <- c(1, seq(from = intervals, to = length(hs.x), by = intervals))

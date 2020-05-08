@@ -9,6 +9,8 @@ hs_preprocess(
   smooth = FALSE,
   align = FALSE,
   align_ref = 1,
+  align_tol = 5,
+  align_wind = 1,
   path = NULL,
   pattern = ".spc",
   trim.range = c(400, 1800),
@@ -24,6 +26,10 @@ hs_preprocess(
 
 \item{align_ref}{Spectrum to use as reference for the alignment.
 Defaults to 1, the first spectrum.}
+
+\item{align_tol}{Tolerance value for alignment. Defaults to 5.}
+
+\item{align_wind}{Window for alignment. Defaults to 1.}
 
 \item{path}{Path contain spc files if no hyperSpec object is available}
 

@@ -7,10 +7,14 @@
 #' @param intervals Decide in which sample size intervals you want to inspect the curves.
 #' Defaults to 10 cells.
 #' @param nboot Number of bootstraps to condut for each sample size. Defaults to 10.
-#' @param peak_detection Should peak detection be used instead of raw spectra for Hill calculations? Defaults to FALSE
-#' @param peak_window Peak windows size for a peak to be considered a signal. Defaults to 20.
+#' @param peak_detection Should peak detection be used instead of raw spectra for Hill calculations?
+#' Defaults to FALSE
+#' @param peak_window Peak windows size for a peak to be considered a signal.
+#' Defaults to 20.
 #' @param peak_method Which peak detection method should be used (requires peak_detection == TRUE).
 #' Options are "MAD" and "SuperSmoother"
+#' @param replace Define whether replacement should be used during spectral resampling.
+#' Defaults to TRUE.
 #' @param plot_fig Should figures of collectors curves be shown? Defaults to TRUE.
 #' @importFrom dplyr group_by summarize
 #' @importFrom magrittr %>%
@@ -26,7 +30,7 @@
 #' hs_example <- hs_preprocess(hs_example)
 #'
 #' # Calculate metrics
-#' hs_coll_curve(hs_example, intervals = 3, nboot = 10, plot_fig = FALSE)
+#' hs_coll_curve(hs_example, intervals = 3, nboot = 10, plot_fig = FALSE, replace = TRUE)
 #' @export
 #'
 hs_coll_curve <- function(hs.x,
@@ -35,7 +39,8 @@ hs_coll_curve <- function(hs.x,
   peak_detection = FALSE,
   peak_window = 20,
   peak_method = c("MAD"),
-  plot_fig = TRUE){
+  plot_fig = TRUE,
+  replace = TRUE){
 
   # Create sequence of cells to check
   seq_int <- c(1, seq(from = intervals, to = length(hs.x), by = intervals))
@@ -43,7 +48,7 @@ hs_coll_curve <- function(hs.x,
   # Loop through bootstraps and sample sizes
   for(i in seq_int){
     for(j in 1:nboot){
-      hs.x.boot <- hs_resample(hs.x, sample = i, replace = TRUE)
+      hs.x.boot <- hs_resample(hs.x, sample = i, replace = replace)
       hs.x.boot.ram <- hs_phenoRam(hs.x.boot,
         peak_detection = peak_detection,
         peak_window = peak_window,

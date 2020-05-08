@@ -4,10 +4,12 @@
 \alias{hs_tsne}
 \title{Run tSNE on a hyperspec object}
 \usage{
-hs_tsne(hs.x, ...)
+hs_tsne(hs.x, PCA = FALSE, ...)
 }
 \arguments{
 \item{hs.x}{hyperSpec object or alternatively distance matrix}
+
+\item{PCA}{Should PCA be used for initial dimension reduction? Defaults to FALSE.}
 
 \item{...}{Parameters to pass on to tsne().}
 }

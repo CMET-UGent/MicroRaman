@@ -1,8 +1,12 @@
 #' Calculate the phenotypic heterogeneity indices for each cell
 #'
 #' @param hs.x Available hyperspec object
-#' @param smooth Smoothing TRUE/FALSE
-#' @param align Align spectra TRUE/FALSE
+#' @param smooth Smoothing TRUE/FALSE. Defaults to FALSE.
+#' @param align Align spectra TRUE/FALSE. Defaults to FALSE.
+#' @param align_ref Spectrum to use as reference for the alignment.
+#' Defaults to 1, the first spectrum.
+#' @param align_tol Tolerance value for alignment. Defaults to 5.
+#' @param align_wind Window for alignment. Defaults to 1.
 #' @param niter Number of iterations.
 #' @param path Path contain spc files if no hyperSpec object is available
 #' @param pattern Pattern of spc files to import from path
@@ -24,6 +28,9 @@
 hs_preprocess <- function(hs.x,
   smooth = FALSE,
   align = FALSE,
+  align_ref = 1,
+  align_tol = 5,
+  align_wind = 1,
   path = NULL,
   pattern = ".spc",
   trim.range = c(400, 1800),
@@ -98,19 +105,21 @@ hs_preprocess <- function(hs.x,
     ylim = c(min(intensity(mq.norm[[1]])), max(intensity(mq.norm[[1]])))
   )
 
-  # Aligned spectra
+  # Align spectra
   #The first spectra is used as reference
-  spectra_aligned <-
-    alignSpectra(
-      mq.norm,
-      tolerance = 5,
-      halfWindowSize = 1,
-      reference = mq.norm[[1]]
-    )
-
-  #### change MALDIquant (mq.norm) object in Hyperspec (hs.norm) object ####
-  # get the intensity matrix from the mq.norm object
-  hs.x <- mq_conv_hs(spectra_aligned)
+  if (align) {
+    spectra_aligned <-
+      alignSpectra(
+        mq.norm,
+        tolerance = align_tol,
+        halfWindowSize = align_wind,
+        reference = mq.norm[[align_ref]]
+      )
+    # change MALDIquant (mq.norm) object in Hyperspec (hs.norm) object ####
+    # get the intensity matrix from the mq.norm object
+    hs.x <- mq_conv_hs(spectra_aligned)
+  } else
+    hs.x <- mq_conv_hs(mq.norm)
 
   return(hs.x)
 }

@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1595454616655.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "3288D837",
+    "lastKnownWriteTime" : 1595454690,
+    "last_content_update" : 1595454690139,
+    "path" : "~/Software_dev/MR2/MicroRaman/Gemfile",
+    "project_path" : "Gemfile",
+    "properties" : {
+        "cursorPosition" : "5,30",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "text"
+}

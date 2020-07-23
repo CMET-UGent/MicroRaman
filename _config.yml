@@ -18,12 +18,12 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-title: MicroRaman R package basic workflow
-email: your-email@example.com
+title: MicroRaman default workflow
+email: ruben.props@ugent.be
 description: >- # this means to ignore newlines until "baseurl:"
-  Write an awesome description for your new site here. You can edit this
-  line in _config.yml. It will appear in your document head meta (for
-  Google search results) and in your feed.xml site description.
+  MicroRaman is an R package that aims to provide a standardized and automated
+  workflow for Raman spectra analysis of microbial data. It was developed to
+  accompany publications by Cristina Garcia Timermans (see citation)
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
 github_username:  CMET-UGent
 
